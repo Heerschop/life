@@ -1,0 +1,25 @@
+{
+  "name": "life",
+  "version": "1.0.0",
+  "description": "life ====",
+  "main": "main.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "start": "lite-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Heerschop/life.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Heerschop/life/issues"
+  },
+  "homepage": "https://github.com/Heerschop/life#readme",
+  "devDependencies": {
+    "lite-server": "^2.5.4"
+  }
+}
