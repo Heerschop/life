@@ -1,0 +1,12 @@
+{
+  "menu": {
+    "description": "action",
+    "serve:Serve your app.": "serve",
+    "build:Build your app.": "build"
+  },
+  "options": {
+    "menu": {
+      "defaultChoice": "serve"
+    }
+  }
+}
