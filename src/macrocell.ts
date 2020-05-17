@@ -1,6 +1,6 @@
 "use strict";
 
-function load_macrocell(universe, text) {
+function load_macrocell(universe: any, text: string) {
   const lines = text.split("\n");
 
   if (!lines[0].startsWith("[M2]")) {
@@ -20,7 +20,7 @@ function load_macrocell(universe, text) {
     return;
   }
 
-  const nodes = [];
+  const nodes: number | undefined[] = [];
   nodes[0] = undefined; // special: Empty pattern
 
   for (let i = tree_start; i < lines.length; i++) {
@@ -72,7 +72,7 @@ function load_macrocell(universe, text) {
     }
     else {
       // node
-      const parts = line.split(" ");
+      const parts = line.split(" ") as any as number[];
       console.assert(parts.length === 5, "length");
       let [level, nw, ne, sw, se] = parts;
       level = +level;

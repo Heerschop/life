@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /*
  * TODO:
  * - remember settings in the hash or offer link
