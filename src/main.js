@@ -67,7 +67,7 @@ var
      * path to the folder with all patterns
      * @const
      */
-    pattern_path = "examples/",
+    pattern_path = "assets/examples/",
 
     loaded = false,
 
