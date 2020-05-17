@@ -34,7 +34,7 @@ var formats = (function () {
 
 
 
-  function parse_rle(pattern_string) {
+  function parse_rle(pattern_string: string) {
     var
       result = parse_comments(pattern_string, "#"),
       x = 0, y = 0,
@@ -165,13 +165,13 @@ var formats = (function () {
     return result;
   }
 
-  function increase_buf_size(buffer) {
+  function increase_buf_size(buffer: any) {
     var new_buffer = new Int32Array(buffer.length * 1.5 | 0);
     new_buffer.set(buffer);
     return new_buffer;
   }
 
-  function parse_life105(pattern_string) {
+  function parse_life105(pattern_string: string) {
     var result = parse_comments(pattern_string, "#");
 
     // defunctional now
@@ -180,7 +180,7 @@ var formats = (function () {
     return result;
   }
 
-  function parse_life106(pattern_string) {
+  function parse_life106(pattern_string: string) {
     // a list of coordinates essentially
     var expr = /\s*(-?\d+)\s+(-?\d+)\s*(?:\n|$)/g,
       match,
@@ -198,7 +198,7 @@ var formats = (function () {
     };
   }
 
-  function parse_plaintext(pattern_string) {
+  function parse_plaintext(pattern_string: string) {
     var result = parse_comments(pattern_string, "!");
 
     pattern_string = result.pattern_string;
@@ -245,11 +245,15 @@ var formats = (function () {
     return result;
   }
 
-  function parse_comments(pattern_string, comment_char) {
+  function parse_comments(pattern_string: string, comment_char: string): any {
     var result = {
       comment: "",
-      urls: [],
+      urls: [] as string[],
       short_comment: "",
+      title: '',
+      rule: '',
+      author: '',
+      pattern_string: ''
     },
       nl,
       line,
@@ -330,7 +334,7 @@ var formats = (function () {
     return result;
   }
 
-  function parse_pattern(pattern_text) {
+  function parse_pattern(pattern_text: string) {
     pattern_text = pattern_text.replace(/\r/g, "");
 
     if (pattern_text[0] === "!") {
@@ -352,7 +356,7 @@ var formats = (function () {
     }
   }
 
-  function rule2str(rule_s, rule_b) {
+  function rule2str(rule_s: number, rule_b: number) {
     var rule = "";
 
     for (var i = 0; rule_s; rule_s >>= 1, i++) {
@@ -372,32 +376,32 @@ var formats = (function () {
     return rule;
   }
 
-  function rule2str_rle(rule_s, rule_b) {
-    let rule = formats.rule2str(rule_s, rule_b);
-    rule = rule.split("/");
-    rule = `B${rule[1]}/S${rule[0]}`;
-    return rule;
+  function rule2str_rle(rule_s: number, rule_b: number) {
+    const rule = formats.rule2str(rule_s, rule_b);
+    const columns = rule.split("/");
+
+    return `B${columns[1]}/S${columns[0]}`;
   }
 
-  function parse_rule_rle(rule_str, survived) {
-    rule_str = rule_str.split("/");
+  function parse_rule_rle(rule_str: string, survived: boolean) {
+    const columns = rule_str.split("/");
 
-    if (!rule_str[1]) {
+    if (!columns[1]) {
       return false;
     }
 
-    if (Number(rule_str[0])) {
-      return parse_rule(rule_str.join("/"), survived);
+    if (Number(columns[0])) {
+      return parse_rule(columns.join("/"), survived);
     }
 
-    if (rule_str[0][0].toLowerCase() === "b") {
-      rule_str.reverse();
+    if (columns[0][0].toLowerCase() === "b") {
+      columns.reverse();
     }
 
-    return parse_rule(rule_str[0].substr(1) + "/" + rule_str[1].substr(1), survived);
+    return parse_rule(columns[0].substr(1) + "/" + columns[1].substr(1), survived);
   }
 
-  function parse_rule(rule_str, survived) {
+  function parse_rule(rule_str: string, survived: boolean) {
     var rule = 0,
       parsed = rule_str.split("/")[survived ? 0 : 1];
 
@@ -414,8 +418,8 @@ var formats = (function () {
     return rule;
   }
 
-  function* rle_generator(life, bounds) {
-    function make(length, is_empty) {
+  function* rle_generator(life: any, bounds: any): any {
+    function make(length: number, is_empty: boolean) {
       console.assert(length >= 0);
 
       if (length === 0) {
@@ -461,7 +465,7 @@ var formats = (function () {
   }
 
   // implemented according to http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
-  function generate_rle(life, name, comments) {
+  function generate_rle(life: any, name: string, comments: any) {
     const lines = [];
     const MAX_LINE_LENGTH = 70;
 
@@ -469,7 +473,7 @@ var formats = (function () {
       lines.push("#N " + name);
     }
 
-    lines.push.apply(lines, comments.map(c => "#C " + c));
+    lines.push.apply(lines, comments.map((c: any) => "#C " + c));
 
     const root = life.root;
     const bounds = life.get_root_bounds();

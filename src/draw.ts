@@ -1,7 +1,7 @@
 "use strict";
 
 /** @constructor */
-function LifeCanvasDrawer() {
+function LifeCanvasDrawer(this: any) {
   var
 
     // where is the viewport in pixels, from 0,0
@@ -10,21 +10,21 @@ function LifeCanvasDrawer() {
     /** @type {number} */
     canvas_offset_y = 0,
 
-    canvas_width,
-    canvas_height,
+    canvas_width: number,
+    canvas_height: number,
 
     // canvas contexts
-    canvas,
-    context,
+    canvas: any,
+    context: any,
 
-    image_data,
-    image_data_data,
+    image_data: any,
+    image_data_data: any,
 
     // in pixels
-    border_width,
-    cell_color_rgb,
+    border_width: number,
+    cell_color_rgb: any,
 
-    drawer = this;
+    drawer: any = this;
 
   var pixel_ratio = 1;
 
@@ -50,7 +50,7 @@ function LifeCanvasDrawer() {
 
 
 
-  function init(dom_parent) {
+  function init(dom_parent: any) {
     canvas = document.createElement("canvas");
 
     if (!canvas.getContext) {
@@ -66,7 +66,7 @@ function LifeCanvasDrawer() {
     return true;
   }
 
-  function set_size(width, height) {
+  function set_size(width: number, height: number) {
     if (width !== canvas_width || height !== canvas_height) {
       if (true) {
         canvas.style.width = width + "px";
@@ -97,7 +97,7 @@ function LifeCanvasDrawer() {
     }
   }
 
-  function draw_node(node, size, left, top) {
+  function draw_node(node: any, size: number, left: number, top: number) {
     if (node.population === 0) {
       return;
     }
@@ -132,7 +132,7 @@ function LifeCanvasDrawer() {
     }
   }
 
-  function fill_square(x, y, size) {
+  function fill_square(x: number, y: number, size: number) {
     var width = size - border_width,
       height = width;
 
@@ -175,7 +175,7 @@ function LifeCanvasDrawer() {
   }
 
 
-  function redraw(node) {
+  function redraw(node: any) {
     var bg_color_rgb = color2rgb(drawer.background_color);
     var bg_color_int = bg_color_rgb.r | bg_color_rgb.g << 8 | bg_color_rgb.b << 16 | 0xFF << 24;
 
@@ -199,7 +199,7 @@ function LifeCanvasDrawer() {
    * @param {number} center_x
    * @param {number} center_y
    */
-  function zoom(out, center_x, center_y) {
+  function zoom(out: any, center_x: number, center_y: number) {
     if (out) {
       canvas_offset_x -= Math.round((canvas_offset_x - center_x) / 2);
       canvas_offset_y -= Math.round((canvas_offset_y - center_y) / 2);
@@ -218,18 +218,18 @@ function LifeCanvasDrawer() {
    * @param {number} center_x
    * @param {number} center_y
    */
-  function zoom_at(out, center_x, center_y) {
+  function zoom_at(out: any, center_x: number, center_y: number) {
     zoom(out, center_x * pixel_ratio, center_y * pixel_ratio);
   }
 
-  function zoom_centered(out) {
+  function zoom_centered(out: any) {
     zoom(out, canvas_width >> 1, canvas_height >> 1);
   }
 
   /*
    * set zoom to the given level, rounding down
    */
-  function zoom_to(level) {
+  function zoom_to(level: number) {
     while (drawer.cell_width > level) {
       zoom_centered(true);
     }
@@ -244,7 +244,7 @@ function LifeCanvasDrawer() {
     canvas_offset_y = canvas_height >> 1;
   }
 
-  function move(dx, dy) {
+  function move(dx: number, dy: number) {
     canvas_offset_x += Math.round(dx * pixel_ratio);
     canvas_offset_y += Math.round(dy * pixel_ratio);
 
@@ -272,7 +272,7 @@ function LifeCanvasDrawer() {
     //}
   }
 
-  function fit_bounds(bounds) {
+  function fit_bounds(bounds: any) {
     var width = bounds.right - bounds.left,
       height = bounds.bottom - bounds.top,
       relative_size,
@@ -302,7 +302,7 @@ function LifeCanvasDrawer() {
     canvas_offset_y = y;
   }
 
-  function draw_cell(x, y, set) {
+  function draw_cell(x: number, y: number, set: any) {
     var cell_x = x * drawer.cell_width + canvas_offset_x,
       cell_y = y * drawer.cell_width + canvas_offset_y,
       width = Math.ceil(drawer.cell_width) -
@@ -318,7 +318,7 @@ function LifeCanvasDrawer() {
     context.fillRect(cell_x, cell_y, width, width);
   }
 
-  function pixel2cell(x, y) {
+  function pixel2cell(x: number, y: number) {
     return {
       x: Math.floor((x * pixel_ratio - canvas_offset_x + drawer.border_width / 2) / drawer.cell_width),
       y: Math.floor((y * pixel_ratio - canvas_offset_y + drawer.border_width / 2) / drawer.cell_width)
@@ -326,7 +326,7 @@ function LifeCanvasDrawer() {
   }
 
   // #321 or #332211 to { r: 0x33, b: 0x22, g: 0x11 }
-  function color2rgb(color) {
+  function color2rgb(color: any) {
     if (color.length === 4) {
       return {
         r: parseInt(color[1] + color[1], 16),
