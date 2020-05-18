@@ -1,5 +1,3 @@
-"use strict";
-
 var
   /** @const */
   MIN_BUFFER_SIZE = 0x100,

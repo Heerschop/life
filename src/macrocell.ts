@@ -1,5 +1,3 @@
-"use strict";
-
 import { formats } from './formats';
 
 export function load_macrocell(universe: any, text: string) {

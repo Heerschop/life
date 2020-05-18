@@ -1,5 +1,3 @@
-"use strict";
-
 /** @constructor */
 export function LifeCanvasDrawer(this: any) {
   var

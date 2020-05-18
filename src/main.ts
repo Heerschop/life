@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { LifeUniverse } from './life-new';
+import { LifeUniverse } from './life';
 import { LifeCanvasDrawer } from './draw';
 import { formats } from './formats';
 import { load_macrocell } from './macrocell';
@@ -20,8 +20,6 @@ import { load_macrocell } from './macrocell';
  * - run http://copy.sh/life/?pattern=demonoid_synth without crashing (improve memory efficiency)
  * - some patterns break randomly (hard to reproduce, probably related to speed changing)
  */
-
-"use strict";
 
 var
   /** @const */
