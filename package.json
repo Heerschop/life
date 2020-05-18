@@ -23,6 +23,7 @@
     "cpx": "^1.5.0",
     "lite-server": "^2.5.4",
     "rimraf": "^3.0.2",
+    "rollup": "^2.10.2",
     "script-launcher": "^1.29.0",
     "typescript": "^3.9.2"
   }

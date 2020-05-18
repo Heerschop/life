@@ -22,7 +22,7 @@ var
 
 
 /** @constructor */
-function LifeUniverse() {
+export function LifeUniverse() {
   // last id for nodes
   /** @type {number} */
   this.last_id = 0;

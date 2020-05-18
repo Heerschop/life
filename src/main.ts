@@ -1,5 +1,10 @@
 // @ts-nocheck
 
+import { LifeUniverse } from './life-new';
+import { LifeCanvasDrawer } from './draw';
+import { formats } from './formats';
+import { load_macrocell } from './macrocell';
+
 /*
  * TODO:
  * - remember settings in the hash or offer link
@@ -17,7 +22,6 @@
  */
 
 "use strict";
-
 
 var
   /** @const */

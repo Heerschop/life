@@ -1,7 +1,7 @@
 "use strict";
 
 /** @constructor */
-function LifeCanvasDrawer(this: any) {
+export function LifeCanvasDrawer(this: any) {
   var
 
     // where is the viewport in pixels, from 0,0

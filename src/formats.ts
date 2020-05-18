@@ -18,7 +18,7 @@ var
 
 
 
-var formats = (function () {
+export var formats = (function () {
 
   return {
     parse_rle: parse_rle,
@@ -31,7 +31,6 @@ var formats = (function () {
     parse_comments: parse_comments,
     generate_rle: generate_rle,
   };
-
 
 
   function parse_rle(pattern_string: string) {

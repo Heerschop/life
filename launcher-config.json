@@ -7,12 +7,16 @@
       ]
     ],
     "build": [
-      "rimraf dist",
+      "rimraf dist tmp",
+      "mkdir tmp",
+      "touch tmp/main.js",
+      "cpx 'src/assets/**/*'  dist/assets --verbose",
       [
-        "cpx 'src/assets/**/*' dist/assets",
-        "cpx 'src/*.{html,css}'      dist --verbose $*",
-        "tsc $*"
+        "cpx 'src/*.{html,css}' dist        --verbose $*",
+        "tsc $*",
+        "bundle $*"
       ]
-    ]
+    ],
+    "bundle": "rollup --config $*"
   }
 }

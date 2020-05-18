@@ -1,6 +1,8 @@
 "use strict";
 
-function load_macrocell(universe: any, text: string) {
+import { formats } from './formats';
+
+export function load_macrocell(universe: any, text: string) {
   const lines = text.split("\n");
 
   if (!lines[0].startsWith("[M2]")) {
