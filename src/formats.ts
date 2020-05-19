@@ -16,24 +16,10 @@ var
 
 
 
-export var formats = (function () {
-
-  return {
-    parse_rle: parse_rle,
-    //parse_life105: parse_life105,
-    //parse_life106: parse_life106,
-    //parse_plaintext: parse_plaintext,
-    parse_pattern: parse_pattern,
-    rule2str: rule2str,
-    parse_rule: parse_rule,
-    parse_comments: parse_comments,
-    generate_rle: generate_rle,
-  };
-
-
-  function parse_rle(pattern_string: string) {
+export class Formats {
+  parse_rle(pattern_string: string) {
     var
-      result = parse_comments(pattern_string, "#"),
+      result = this.parse_comments(pattern_string, "#"),
       x = 0, y = 0,
       header_match,
       expr = /([a-zA-Z]+) *= *([a-zA-Z0-9\/()]+)/g,
@@ -57,11 +43,11 @@ export var formats = (function () {
           break;
 
         case "rule":
-          result.rule_s = parse_rule_rle(header_match[2], true);
-          result.rule_b = parse_rule_rle(header_match[2], false);
+          result.rule_s = this.parse_rule_rle(header_match[2], true);
+          result.rule_b = this.parse_rule_rle(header_match[2], false);
 
-          result.comment += "\nRule: " + rule2str(result.rule_s, result.rule_b) + "\n";
-          result.rule = rule2str(result.rule_s, result.rule_b);
+          result.comment += "\nRule: " + this.rule2str(result.rule_s, result.rule_b) + "\n";
+          result.rule = this.rule2str(result.rule_s, result.rule_b);
           break;
 
         case "alpha":
@@ -129,8 +115,8 @@ export var formats = (function () {
         else if (chr >= 65 && chr <= 90 || chr >= 97 && chr < 122) // A-Za-z
         {
           if (alive_count + count > field_x.length) {
-            field_x = increase_buf_size(field_x);
-            field_y = increase_buf_size(field_y);
+            field_x = this.increase_buf_size(field_x);
+            field_y = this.increase_buf_size(field_y);
           }
 
           while (count--) {
@@ -162,14 +148,14 @@ export var formats = (function () {
     return result;
   }
 
-  function increase_buf_size(buffer: any) {
+  increase_buf_size(buffer: any) {
     var new_buffer = new Int32Array(buffer.length * 1.5 | 0);
     new_buffer.set(buffer);
     return new_buffer;
   }
 
-  function parse_life105(pattern_string: string) {
-    var result = parse_comments(pattern_string, "#");
+  parse_life105(pattern_string: string) {
+    var result = this.parse_comments(pattern_string, "#");
 
     // defunctional now
     // parsing this is similiar to plaintext
@@ -177,7 +163,7 @@ export var formats = (function () {
     return result;
   }
 
-  function parse_life106(pattern_string: string) {
+  parse_life106(pattern_string: string) {
     // a list of coordinates essentially
     var expr = /\s*(-?\d+)\s+(-?\d+)\s*(?:\n|$)/g,
       match,
@@ -195,8 +181,8 @@ export var formats = (function () {
     };
   }
 
-  function parse_plaintext(pattern_string: string) {
-    var result = parse_comments(pattern_string, "!");
+  parse_plaintext(pattern_string: string) {
+    var result = this.parse_comments(pattern_string, "!");
 
     pattern_string = result.pattern_string;
 
@@ -242,7 +228,7 @@ export var formats = (function () {
     return result;
   }
 
-  function parse_comments(pattern_string: string, comment_char: string): any {
+  parse_comments(pattern_string: string, comment_char: string): any {
     var result = {
       comment: "",
       urls: [] as string[],
@@ -331,14 +317,14 @@ export var formats = (function () {
     return result;
   }
 
-  function parse_pattern(pattern_text: string) {
+  parse_pattern(pattern_text: string) {
     pattern_text = pattern_text.replace(/\r/g, "");
 
     if (pattern_text[0] === "!") {
-      return parse_plaintext(pattern_text);
+      return this.parse_plaintext(pattern_text);
     }
     else if (/^(?:#[^\n]*\n)*\n*(?:(?:x|y|rule|color|alpha) *= *[a-z0-9\/(),]+,? *)+\s*\n/i.test(pattern_text)) {
-      return parse_rle(pattern_text);
+      return this.parse_rle(pattern_text);
     }
     // defunctional
     //else if(pattern_text.substr(0, 10) === "#Life 1.05")
@@ -346,14 +332,14 @@ export var formats = (function () {
     //    importer = parse_life105;
     //}
     else if (pattern_text.substr(0, 10) === "#Life 1.06") {
-      return parse_life106(pattern_text);
+      return this.parse_life106(pattern_text);
     }
     else {
       return { error: "Format detection failed." };
     }
   }
 
-  function rule2str(rule_s: number, rule_b: number) {
+  rule2str(rule_s: number, rule_b: number) {
     var rule = "";
 
     for (var i = 0; rule_s; rule_s >>= 1, i++) {
@@ -373,14 +359,14 @@ export var formats = (function () {
     return rule;
   }
 
-  function rule2str_rle(rule_s: number, rule_b: number) {
-    const rule = formats.rule2str(rule_s, rule_b);
+  rule2str_rle(rule_s: number, rule_b: number) {
+    const rule = this.rule2str(rule_s, rule_b);
     const columns = rule.split("/");
 
     return `B${columns[1]}/S${columns[0]}`;
   }
 
-  function parse_rule_rle(rule_str: string, survived: boolean) {
+  parse_rule_rle(rule_str: string, survived: boolean) {
     const columns = rule_str.split("/");
 
     if (!columns[1]) {
@@ -388,17 +374,17 @@ export var formats = (function () {
     }
 
     if (Number(columns[0])) {
-      return parse_rule(columns.join("/"), survived);
+      return this.parse_rule(columns.join("/"), survived);
     }
 
     if (columns[0][0].toLowerCase() === "b") {
       columns.reverse();
     }
 
-    return parse_rule(columns[0].substr(1) + "/" + columns[1].substr(1), survived);
+    return this.parse_rule(columns[0].substr(1) + "/" + columns[1].substr(1), survived);
   }
 
-  function parse_rule(rule_str: string, survived: boolean) {
+  parse_rule(rule_str: string, survived: boolean) {
     var rule = 0,
       parsed = rule_str.split("/")[survived ? 0 : 1];
 
@@ -415,7 +401,7 @@ export var formats = (function () {
     return rule;
   }
 
-  function* rle_generator(life: any, bounds: any): any {
+  *rle_generator(life: any, bounds: any): any {
     function make(length: number, is_empty: boolean) {
       console.assert(length >= 0);
 
@@ -462,7 +448,7 @@ export var formats = (function () {
   }
 
   // implemented according to http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
-  function generate_rle(life: any, name: string, comments: any) {
+  generate_rle(life: any, name: string, comments: any) {
     const lines = [];
     const MAX_LINE_LENGTH = 70;
 
@@ -478,13 +464,13 @@ export var formats = (function () {
     {
       const width = bounds.right - bounds.left + 1;
       const height = bounds.bottom - bounds.top + 1;
-      const rule = rule2str_rle(life.rule_s, life.rule_b);
+      const rule = this.rule2str_rle(life.rule_s, life.rule_b);
       lines.push(`x = ${width}, y = ${height}, rule = ${rule}`);
     }
 
     let current_line = "";
 
-    for (let fragment of rle_generator(life, bounds)) {
+    for (let fragment of this.rle_generator(life, bounds)) {
       if (current_line.length + fragment.length > MAX_LINE_LENGTH) {
         console.assert(fragment.length < MAX_LINE_LENGTH);
         lines.push(current_line);
@@ -498,4 +484,6 @@ export var formats = (function () {
 
     return lines.join("\n");
   }
-})();
+}
+
+export const formats = new Formats();

@@ -18,6 +18,37 @@ var
   MASK_BOTTOM = 8;
 
 
+class TreeNode {
+  constructor(nw, ne, sw, se, id) {
+    this.nw = nw;
+    this.ne = ne;
+    this.sw = sw;
+    this.se = se;
+
+    this.id = id;
+
+    // 2^level = width/height of area
+    this.level = nw.level + 1;
+
+    this.population = nw.population + ne.population + sw.population + se.population;
+
+    // one generation forward
+    this.cache = null;
+
+    // 2^(level - 2) generations forward
+    this.quick_cache = null;
+
+    // next entry in the hashmap if this node occupies the same slot
+    this.hashmap_next = undefined;
+
+    /*if(this.population === 0)
+    {
+        this.cache = this.quick_cache = nw;
+    }*/
+  }
+}
+
+
 
 export class LifeUniverse {
   constructor() {
@@ -282,7 +313,7 @@ export class LifeUniverse {
           return this.create_tree(nw, ne, sw, se);
         }
 
-        var new_node = new this.TreeNode(nw, ne, sw, se, this.last_id++);
+        var new_node = new TreeNode(nw, ne, sw, se, this.last_id++);
 
         if (prev !== undefined) {
           prev.hashmap_next = new_node;
@@ -730,36 +761,6 @@ export class LifeUniverse {
     }
   };
 
-  /**
-   * @constructor
-   */
-  TreeNode(nw, ne, sw, se, id) {
-    this.nw = nw;
-    this.ne = ne;
-    this.sw = sw;
-    this.se = se;
-
-    this.id = id;
-
-    // 2^level = width/height of area
-    this.level = nw.level + 1;
-
-    this.population = nw.population + ne.population + sw.population + se.population;
-
-    // one generation forward
-    this.cache = null;
-
-    // 2^(level - 2) generations forward
-    this.quick_cache = null;
-
-    // next entry in the hashmap if this node occupies the same slot
-    this.hashmap_next = undefined;
-
-    /*if(this.population === 0)
-    {
-        this.cache = this.quick_cache = nw;
-    }*/
-  };
 
   node_set_bit(node, x, y, living) {
     if (node.level === 0) {
