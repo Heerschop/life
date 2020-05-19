@@ -1,6 +1,6 @@
-// @ts-nocheck
+// @ t s-nocheck
 
-var
+const
   /** @const */
   LOAD_FACTOR = .9,
   /** @const */
@@ -19,14 +19,13 @@ var
 
 
 class TreeNode {
-  constructor(nw, ne, sw, se, id) {
-    this.nw = nw;
-    this.ne = ne;
-    this.sw = sw;
-    this.se = se;
+  level: any;
+  population: any;
+  cache: any;
+  quick_cache: any;
+  hashmap_next: any;
 
-    this.id = id;
-
+  constructor(public nw: any, public ne: any, public sw: any, public se: any, public id: any) {
     // 2^level = width/height of area
     this.level = nw.level + 1;
 
@@ -51,34 +50,38 @@ class TreeNode {
 
 
 export class LifeUniverse {
+  public last_id = 0; // last id for nodes
+  public hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
+  public max_load = 0; // Size when the next GC will happen
+  public hashmap: any[] = []; // the hashmap
+  public empty_tree_cache: any[] = [];
+  public level2_cache: any[] = [];
+  public _powers = new Float64Array(1024);
+  public _bitcounts = new Int8Array(0x758);
+  public rule_b = 1 << 3; // current rule setting
+  public rule_s = 1 << 2 | 1 << 3;
+  public root: any;
+  public rewind_state = null;
+  public step = 0; // number of generations to calculate at one time, written as 2^n
+  public generation = 0; // in which generation are we
+  public false_leaf = {// living or dead leaf
+    id: 3,
+    population: 0,
+    level: 0,
+  };
+  public true_leaf = {
+    id: 2,
+    population: 1,
+    level: 0,
+  };
+
   constructor() {
-    // last id for nodes
-    /** @type {number} */
-    this.last_id = 0;
-
-    // Size of the hashmap.
-    // Always a power of 2 minus 1
-    this.hashmap_size = 0;
-
-
-    // Size when the next GC will happen
-    this.max_load = 0;
-
-    // the hashmap
-    this.hashmap = [];
-
-    this.empty_tree_cache = [];
-    this.level2_cache = [];
-
-    this._powers = new Float64Array(1024);
     this._powers[0] = 1;
 
     for (var i = 1; i < 1024; i++) {
       this._powers[i] = this._powers[i - 1] * 2;
     }
 
-
-    this._bitcounts = new Int8Array(0x758);
     this._bitcounts.set([0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4]);
 
     for (var i = 0x10; i < 0x758; i++) {
@@ -87,45 +90,10 @@ export class LifeUniverse {
         this._bitcounts[i >> 8];
     }
 
-
-    // current rule setting
-    /** @type {number} */
-    this.rule_b = 1 << 3;
-    /** @type {number} */
-    this.rule_s = 1 << 2 | 1 << 3;
-
-    this.root = null;
-
-    this.rewind_state = null;
-
-    /**
-     * number of generations to calculate at one time,
-     * written as 2^n
-     * @type {number}
-     */
-    this.step = 0;
-
-    // in which generation are we
-    /** @type {number} */
-    this.generation = 0;
-
-    // living or dead leaf
-    this.false_leaf =
-    {
-      id: 3,
-      population: 0,
-      level: 0,
-    };
-    this.true_leaf =
-    {
-      id: 2,
-      population: 1,
-      level: 0,
-    };
-
     this.clear_pattern();
   }
-  pow2(x) {
+
+  pow2(x: number) {
     if (x >= 1024)
       return Infinity;
 
@@ -144,13 +112,13 @@ export class LifeUniverse {
     this.garbage_collect();
   };
 
-  eval_mask(bitmask) {
+  eval_mask(bitmask: number) {
     var rule = (bitmask & 32) ? this.rule_s : this.rule_b;
 
     return rule >> this._bitcounts[bitmask & 0x757] & 1;
   };
 
-  level1_create(bitmask) {
+  level1_create(bitmask: number) {
     return this.create_tree(
       bitmask & 1 ? this.true_leaf : this.false_leaf,
       bitmask & 2 ? this.true_leaf : this.false_leaf,
@@ -159,7 +127,7 @@ export class LifeUniverse {
     );
   };
 
-  set_bit(x, y, living) {
+  set_bit(x: number, y: number, living: boolean) {
     var level = this.get_level_from_bounds({ x: x, y: y });
 
     if (living) {
@@ -177,7 +145,7 @@ export class LifeUniverse {
     this.root = this.node_set_bit(this.root, x, y, living);
   };
 
-  get_bit(x, y) {
+  get_bit(x: number, y: number) {
     var level = this.get_level_from_bounds({ x: x, y: y });
 
     if (level > this.root.level) {
@@ -211,7 +179,7 @@ export class LifeUniverse {
     return bounds;
   };
 
-  empty_tree(level) {
+  empty_tree(level: number): any {
     if (this.empty_tree_cache[level]) {
       return this.empty_tree_cache[level];
     }
@@ -228,7 +196,7 @@ export class LifeUniverse {
     return this.empty_tree_cache[level] = this.create_tree(t, t, t, t);
   };
 
-  expand_universe(node) {
+  expand_universe(node: any) {
     var t = this.empty_tree(node.level - 1);
 
     return this.create_tree(
@@ -241,7 +209,7 @@ export class LifeUniverse {
 
   // Preserve the tree, but remove all cached
   // generations forward
-  uncache(also_quick) {
+  uncache(also_quick: any) {
     for (var i = 0; i <= this.hashmap_size; i++) {
       var node = this.hashmap[i];
 
@@ -257,7 +225,7 @@ export class LifeUniverse {
 
 
   // return false if a node is in the hashmap
-  in_hashmap(n) {
+  in_hashmap(n: any) {
     var hash = this.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size,
       node = this.hashmap[hash];
 
@@ -274,7 +242,7 @@ export class LifeUniverse {
   };
 
   // insert a node into the hashmap
-  hashmap_insert(n) {
+  hashmap_insert(n: any) {
     var hash = this.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size,
       node = this.hashmap[hash],
       prev;
@@ -301,7 +269,7 @@ export class LifeUniverse {
   };
 
   // create or search for a tree node given its children
-  create_tree(nw, ne, sw, se) {
+  create_tree(nw: any, ne: any, sw: any, se: any): any {
     var hash = this.calc_hash(nw.id, ne.id, sw.id, se.id) & this.hashmap_size,
       node = this.hashmap[hash],
       prev;
@@ -336,7 +304,7 @@ export class LifeUniverse {
     }
   };
 
-  next_generation(is_single) {
+  next_generation(is_single: boolean) {
     var root = this.root;
 
     while (
@@ -390,7 +358,7 @@ export class LifeUniverse {
   };
 
   // the hash function used for the hashmap
-  calc_hash(nw_id, ne_id, sw_id, se_id) {
+  calc_hash(nw_id: any, ne_id: any, sw_id: any, se_id: any) {
     //nw_id = nw_id | 0;
     //ne_id = ne_id | 0;
     //sw_id = sw_id | 0;
@@ -423,7 +391,7 @@ export class LifeUniverse {
     this.generation = 0;
   };
 
-  get_bounds(field_x, field_y) {
+  get_bounds(field_x: any, field_y: any) {
     if (!field_x.length) {
       return {
         top: 0,
@@ -467,7 +435,7 @@ export class LifeUniverse {
    * given a point { x, y } or a bounds object { left, top, bottom, right },
    * return the quadtree level that is required to contain this point
    */
-  get_level_from_bounds(bounds) {
+  get_level_from_bounds(bounds: any) {
     // root should always be at least level 3
     var max = 4,
       keys = Object.keys(bounds);
@@ -486,11 +454,11 @@ export class LifeUniverse {
     return Math.ceil(Math.log(max) / Math.LN2) + 1;
   };
 
-  field2tree(field, level) {
+  field2tree(field: any, level: number) {
     var tree = make_node(),
       len = field.length;
 
-    function make_node() {
+    function make_node(): { nw: any, ne: any, sw: any, se: any } {
       return { nw: false, ne: false, sw: false, se: false };
     }
 
@@ -562,7 +530,7 @@ export class LifeUniverse {
   /*
    * move a field so that (0,0) is in the middle
    */
-  make_center(field_x, field_y, bounds) {
+  make_center(field_x: any, field_y: any, bounds: any) {
     var offset_x = Math.round((bounds.left - bounds.right) / 2) - bounds.left,
       offset_y = Math.round((bounds.top - bounds.bottom) / 2) - bounds.top;
 
@@ -574,7 +542,7 @@ export class LifeUniverse {
     bounds.bottom += offset_y;
   };
 
-  move_field(field_x, field_y, offset_x, offset_y) {
+  move_field(field_x: any, field_y: any, offset_x: any, offset_y: any) {
     var len = field_x.length;
 
     for (var i = 0; i < len; i++) {
@@ -584,7 +552,7 @@ export class LifeUniverse {
   };
 
   /** @param {*=} bounds */
-  setup_field(field_x, field_y, bounds) {
+  setup_field(field_x: any, field_y: any, bounds: any) {
     if (bounds === undefined) {
       bounds = this.get_bounds(field_x, field_y);
     }
@@ -606,7 +574,7 @@ export class LifeUniverse {
     //console.profileEnd("setup");
   };
 
-  partition(start, end, test_field, other_field, offset) {
+  partition(start: number, end: number, test_field: any[], other_field: any[], offset: number) {
     // Like quicksort's partition: Seperate the values from start to end by
     // the bitmask in offset in the array test_field, returning the middle
     var i = start,
@@ -641,7 +609,7 @@ export class LifeUniverse {
     return i;
   };
 
-  setup_field_recurse(start, end, field_x, field_y, level) {
+  setup_field_recurse(start: number, end: number, field_x: any, field_y: any, level: number): any {
     if (start > end) {
       return this.empty_tree(level);
     }
@@ -674,7 +642,7 @@ export class LifeUniverse {
     );
   };
 
-  level2_setup(start, end, field_x, field_y) {
+  level2_setup(start: number, end: number, field_x: any, field_y: any) {
     var set = 0,
       x,
       y;
@@ -700,25 +668,29 @@ export class LifeUniverse {
     );
   };
 
-  setup_meta(otca_on, otca_off, field, bounds) {
+  setup_meta(otca_on: any, otca_off: any, field: any, bounds: any) {
     var level = this.get_level_from_bounds(bounds),
       node = this.field2tree(field, level);
 
     this.root = setup_meta_from_tree(node, level + 11);
 
-    function setup_meta_from_tree(node, level) {
+    const that = this;
+
+    console.log('************************');
+
+    function setup_meta_from_tree(node: any, level: number): any {
       if (level === 11) {
         return node ? otca_on : otca_off;
       }
       else if (!node) {
         var dead = setup_meta_from_tree(false, level - 1);
 
-        return this.create_tree(dead, dead, dead, dead);
+        return that.create_tree(dead, dead, dead, dead);
       }
       else {
         level--;
 
-        return this.create_tree(
+        return that.create_tree(
           setup_meta_from_tree(node.nw, level),
           setup_meta_from_tree(node.ne, level),
           setup_meta_from_tree(node.sw, level),
@@ -740,7 +712,7 @@ export class LifeUniverse {
   //};
 
   // set the base step for generations forward
-  set_step(step) {
+  set_step(step: any) {
     if (step !== this.step) {
       this.step = step;
 
@@ -750,7 +722,7 @@ export class LifeUniverse {
     }
   };
 
-  set_rules(s, b) {
+  set_rules(s: number, b: number) {
     if (this.rule_s !== s || this.rule_b !== b) {
       this.rule_s = s;
       this.rule_b = b;
@@ -762,7 +734,7 @@ export class LifeUniverse {
   };
 
 
-  node_set_bit(node, x, y, living) {
+  node_set_bit(node: any, x: number, y: number, living: boolean) {
     if (node.level === 0) {
       return living ? this.true_leaf : this.false_leaf;
     }
@@ -793,7 +765,7 @@ export class LifeUniverse {
     return this.create_tree(nw, ne, sw, se);
   };
 
-  node_get_bit(node, x, y) {
+  node_get_bit(node: any, x: number, y: number): any {
     if (node.population === 0) {
       return false;
     }
@@ -822,7 +794,7 @@ export class LifeUniverse {
     }
   };
 
-  node_get_field(node, left, top, field) {
+  node_get_field(node: any, left: number, top: number, field: any[]) {
     if (node.population === 0) {
       return;
     }
@@ -840,7 +812,7 @@ export class LifeUniverse {
     }
   };
 
-  node_level2_next(node) {
+  node_level2_next(node: any) {
     var nw = node.nw,
       ne = node.ne,
       sw = node.sw,
@@ -861,7 +833,7 @@ export class LifeUniverse {
 
   };
 
-  node_next_generation(node) {
+  node_next_generation(node: any): any {
     if (node.cache) {
       return node.cache;
     }
@@ -901,7 +873,7 @@ export class LifeUniverse {
     );
   };
 
-  node_quick_next_generation(node) {
+  node_quick_next_generation(node: any): any {
     if (node.quick_cache !== null) {
       return node.quick_cache;
     }
@@ -933,7 +905,7 @@ export class LifeUniverse {
     );
   };
 
-  node_hash(node) {
+  node_hash(node: any) {
     if (!this.in_hashmap(node)) {
       // Update the id. We have looked for an old id, as
       // the the hashmap has been cleared and ids have been
@@ -960,7 +932,7 @@ export class LifeUniverse {
     }
   };
 
-  node_get_boundary(node, left, top, find_mask, boundary) {
+  node_get_boundary(node: any, left: number, top: number, find_mask: number, boundary: any) {
     if (node.population === 0 || !find_mask) {
       return;
     }

@@ -2,7 +2,7 @@
   "scripts": {
     "serve": [
       [
-        "lite-server",
+        "sleep 5 && lite-server",
         "build --watch"
       ]
     ],
