@@ -1,26 +1,24 @@
 {
   "scripts": {
     "serve": [
-      "cleanup",
-      "touch tmp/main.js",
       [
         "lite-server",
-        "cpx            --verbose 'src/assets/**/*'  dist/assets",
-        "cpx    --watch --verbose 'src/*.{html,css}' dist        $*",
-        "tsc    --watch $*",
-        "rollup --watch --config $*"
+        "build --watch"
       ]
     ],
     "build": [
       "cleanup",
-      "cpx 'src/assets/**/*'  dist/assets --verbose",
-      "cpx 'src/*.{html,css}' dist        --verbose $*",
-      "tsc $*",
-      "rollup --config $*"
+      "echo ${launch_style_cyan}${launch_style_bold}src → tmp${launch_style_normal}",
+      "tsc --listEmittedFiles",
+      [
+        "cpx 'src/assets/**/*'  dist/assets --verbose",
+        "cpx 'src/*.{html,css}' dist        --verbose $*",
+        "tsc $*",
+        "rollup --config $*"
+      ]
     ],
     "cleanup": [
-      "rimraf dist tmp",
-      "mkdir tmp"
+      "rimraf dist tmp"
     ]
   }
 }
