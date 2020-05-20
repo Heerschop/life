@@ -1,22 +1,10 @@
-// @ t s-nocheck
-
-const
-  /** @const */
-  LOAD_FACTOR = .9,
-  /** @const */
-  INITIAL_SIZE = 16,
-  /** @const */
-  HASHMAP_LIMIT = 24,
-
-  /** @const */
-  MASK_LEFT = 1,
-  /** @const */
-  MASK_TOP = 2,
-  /** @const */
-  MASK_RIGHT = 4,
-  /** @const */
-  MASK_BOTTOM = 8;
-
+const LOAD_FACTOR = .9;
+const INITIAL_SIZE = 16;
+const HASHMAP_LIMIT = 24;
+const MASK_LEFT = 1;
+const MASK_TOP = 2;
+const MASK_RIGHT = 4;
+const MASK_BOTTOM = 8;
 
 class TreeNode {
   level: any;
@@ -53,15 +41,15 @@ export class LifeUniverse {
   public last_id = 0; // last id for nodes
   public hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
   public max_load = 0; // Size when the next GC will happen
-  public hashmap: any[] = []; // the hashmap
-  public empty_tree_cache: any[] = [];
-  public level2_cache: any[] = [];
+  public hashmap: Array<TreeNode | undefined> = []; // the hashmap
+  public empty_tree_cache: TreeNode[] = [];
+  public level2_cache: TreeNode[] = [];
   public _powers = new Float64Array(1024);
   public _bitcounts = new Int8Array(0x758);
   public rule_b = 1 << 3; // current rule setting
   public rule_s = 1 << 2 | 1 << 3;
-  public root: any;
-  public rewind_state = null;
+  public root: any = null;
+  public rewind_state: any = null;
   public step = 0; // number of generations to calculate at one time, written as 2^n
   public generation = 0; // in which generation are we
   public false_leaf = {// living or dead leaf
@@ -179,7 +167,7 @@ export class LifeUniverse {
     return bounds;
   };
 
-  empty_tree(level: number): any {
+  empty_tree(level: number): TreeNode {
     if (this.empty_tree_cache[level]) {
       return this.empty_tree_cache[level];
     }
@@ -196,7 +184,7 @@ export class LifeUniverse {
     return this.empty_tree_cache[level] = this.create_tree(t, t, t, t);
   };
 
-  expand_universe(node: any) {
+  expand_universe(node: any): TreeNode {
     var t = this.empty_tree(node.level - 1);
 
     return this.create_tree(
@@ -269,7 +257,7 @@ export class LifeUniverse {
   };
 
   // create or search for a tree node given its children
-  create_tree(nw: any, ne: any, sw: any, se: any): any {
+  create_tree(nw: any, ne: any, sw: any, se: any): TreeNode {
     var hash = this.calc_hash(nw.id, ne.id, sw.id, se.id) & this.hashmap_size,
       node = this.hashmap[hash],
       prev;
