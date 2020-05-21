@@ -7,17 +7,22 @@
       ]
     ],
     "build": [
-      "cleanup",
+      "clean",
       "echo ${launch_style_cyan}${launch_style_bold}src → tmp${launch_style_normal}",
       "tsc --listEmittedFiles",
       [
-        "cpx 'src/assets/**/*'  dist/assets --verbose",
-        "cpx 'src/*.{html,css}' dist        --verbose $*",
-        "tsc $*",
+        "compile",
         "rollup --config $*"
       ]
     ],
-    "cleanup": [
+    "compile": [
+      [
+        "cpx 'src/assets/**/*'  dist/assets --verbose",
+        "cpx 'src/*.{html,css}' dist        --verbose $*",
+        "tsc $*"
+      ]
+    ],
+    "clean": [
       "rimraf dist tmp"
     ]
   }

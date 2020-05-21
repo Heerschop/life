@@ -2,7 +2,14 @@
   "menu": {
     "description": "action",
     "serve:Serve your app.": "serve",
-    "build:Build your app.": "build"
+    "build:Build your app.": "build",
+    "watch": {
+      "tsc": [
+        "clean",
+        "compile --watch"
+      ],
+      "rollup": "rollup --config --watch"
+    }
   },
   "options": {
     "menu": {
