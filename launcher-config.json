@@ -1,0 +1,29 @@
+{
+  "scripts": {
+    "serve": [
+      [
+        "sleep 5 && lite-server",
+        "build --watch"
+      ]
+    ],
+    "build": [
+      [
+        "compile $*",
+        "sleep 4 && bundle $*"
+      ]
+    ],
+    "compile": [
+      "clean",
+      "echo ${launch_style_cyan}${launch_style_bold}src → tmp${launch_style_normal}",
+      [
+        "cpx 'src/assets/**/*'  dist/assets --verbose",
+        "cpx 'src/*.{html,css}' dist        --verbose $*",
+        "tsc $*"
+      ]
+    ],
+    "bundle":"rollup --config $*",
+    "clean": [
+      "rimraf dist tmp"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "life",
+  "version": "1.0.0",
+  "description": "life ====",
+  "main": "main.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "start": "launch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Heerschop/life.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Heerschop/life/issues"
+  },
+  "homepage": "https://github.com/Heerschop/life#readme",
+  "devDependencies": {
+    "cpx": "^1.5.0",
+    "lite-server": "^2.5.4",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.10.2",
+    "script-launcher": "^1.29.0",
+    "typescript": "^3.9.2"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "menu": {
+    "description": "action",
+    "serve:Serve your app.": "serve",
+    "build:Build your app.": "build",
+    "tools": {
+      "compile:Compile and watch files": "compile --watch",
+      "bundle:Watch files in bundle and rebuild on changes": "bundle --watch",
+      "lite-server:Lightweight development web server": "lite-server"
+    }
+  },
+  "options": {
+    "menu": {
+      "defaultChoice": "serve"
+    }
+  }
+}
