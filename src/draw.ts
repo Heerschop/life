@@ -8,7 +8,6 @@ export class LifeCanvasDrawer {
   private canvas_height = 0;
 
   // canvas contexts
-  private canvas: any;
   private context: any;
 
   private image_data: any;
@@ -20,12 +19,13 @@ export class LifeCanvasDrawer {
 
   private pixel_ratio = 1;
 
-  cell_color = null;
-  background_color = null;
+  public cell_color: string | null = null;
+  public background_color: string | null = null;
 
   // given as ratio of cell size
-  border_width = 0;
-  cell_width = 2;
+  public border_width = 0;
+  public cell_width = 2;
+  public canvas: HTMLCanvasElement = null as any as HTMLCanvasElement;
 
   constructor() {
   }

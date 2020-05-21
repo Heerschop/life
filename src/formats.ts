@@ -448,7 +448,7 @@ export class Formats {
   }
 
   // implemented according to http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
-  generate_rle(life: any, name: string, comments: any) {
+  generate_rle(life: any, name: string | undefined, comments: any) {
     const lines = [];
     const MAX_LINE_LENGTH = 70;
 

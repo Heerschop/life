@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @t s-nocheck
 
 import { LifeUniverse } from './life';
 import { LifeCanvasDrawer } from './draw';
@@ -45,23 +45,23 @@ var
      * which pattern file is currently loaded
      * @type {{title: String, urls, comment, view_url, source_url}}
      * */
-    current_pattern,
+    current_pattern: any,
 
     // functions which is called when the pattern stops running
     /** @type {function()|undefined} */
-    onstop,
+    onstop: any,
 
-    last_mouse_x,
-    last_mouse_y,
+    last_mouse_x: number | null,
+    last_mouse_y: number | null,
 
-    mouse_set,
+    mouse_set: any,
 
     // is the game running ?
     /** @type {boolean} */
     running = false,
 
     /** @type {number} */
-    max_fps,
+    max_fps: number,
 
     // has the pattern list been loaded
     /** @type {boolean} */
@@ -95,7 +95,7 @@ var
   var nextFrame =
     window.requestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
-    window.mozRequestAnimationFrame ||
+    (window as any).mozRequestAnimationFrame ||
     setTimeout;
 
   // setup
@@ -107,10 +107,10 @@ var
 
     loaded = true;
 
-    initial_description = document.querySelector("meta[name=description]").content;
+    initial_description = document.querySelector<any>("meta[name=description]")!.content;
 
     if (!drawer.init(document.body)) {
-      set_text($("notice").getElementsByTagName("h4")[0],
+      set_text($("notice")!.getElementsByTagName("h4")[0],
         "Canvas-less browsers are not supported. I'm sorry for that.");
       return;
     }
@@ -130,7 +130,7 @@ var
     // or a random small pattern instead
     var query = location.search.substr(1).split("&"),
       param,
-      parameters = {};
+      parameters: any = {};
 
     for (var i = 0; i < query.length; i++) {
       param = query[i].split("=");
@@ -153,7 +153,7 @@ var
       let callback_name = "finish_load_gist" + (2147483647 * Math.random() | 0);
       let jsonp_url = "https://api.github.com/gists/" + gist + "?callback=" + callback_name;
 
-      window[callback_name] = function (result) {
+      window[callback_name as any] = <any>function (result: any) {
         let files = result["data"]["files"];
 
         if (files) {
@@ -201,7 +201,7 @@ var
       ];
 
       for (var i = 0; i < elements.length; i++) {
-        $(elements[i]).style.display = "none";
+        $(elements[i])!.style.display = "none";
       }
     }
 
@@ -262,11 +262,11 @@ var
       */
     }
 
-    function try_load_pattern(id) {
+    function try_load_pattern(id: any) {
       show_overlay("loading_popup");
       http_get(
         rle_link(id),
-        function (text) {
+        function (text: string) {
           //console.profile("main setup");
           setup_pattern(text, pattern_parameter);
           //console.profileEnd("main setup");
@@ -291,7 +291,7 @@ var
 
 
     function init_ui() {
-      $("about_close").style.display = "inline";
+      $("about_close")!.style.display = "inline";
 
       hide_element($("notice"));
       hide_overlay();
@@ -309,7 +309,7 @@ var
         requestAnimationFrame(lazy_redraw.bind(0, life.root));
       }, 500);
 
-      $("gen_step").onchange = function (e) {
+      $("gen_step")!.onchange = function (this: any, e) {
         if (this.type === "number") {
           var value = Number(this.value);
 
@@ -329,7 +329,7 @@ var
         }
       };
 
-      $("run_button").onclick = function () {
+      $("run_button")!.onclick = function () {
         if (running) {
           stop();
         }
@@ -338,19 +338,19 @@ var
         }
       };
 
-      $("step_button").onclick = function () {
+      $("step_button")!.onclick = function () {
         if (!running) {
           step(true);
         }
       };
 
-      $("superstep_button").onclick = function () {
+      $("superstep_button")!.onclick = function () {
         if (!running) {
           step(false);
         }
       };
 
-      $("clear_button").onclick = function () {
+      $("clear_button")!.onclick = function () {
         stop(function () {
           set_title();
           set_text($("pattern_name"), "");
@@ -364,7 +364,7 @@ var
         });
       };
 
-      $("rewind_button").onclick = function () {
+      $("rewind_button")!.onclick = function () {
         if (life.rewind_state) {
           stop(function () {
             life.restore_rewind_state();
@@ -420,7 +420,7 @@ var
       var scaling = false;
       var last_distance = 0;
 
-      function distance(touches) {
+      function distance(touches: TouchList) {
         console.assert(touches.length >= 2);
 
         return Math.sqrt(
@@ -440,9 +440,9 @@ var
             which: 1,
             clientX: e.changedTouches[0].clientX,
             clientY: e.changedTouches[0].clientY,
-          };
+          } as MouseEvent;
 
-          drawer.canvas.onmousedown(ev);
+          drawer.canvas.onmousedown!(ev);
 
           e.preventDefault();
         }
@@ -483,19 +483,19 @@ var
         }
       }, false);
 
-      drawer.canvas.addEventListener("touchend", function (e) {
-        window.onmouseup(e);
+      drawer.canvas.addEventListener("touchend", function (e: any) {
+        window.onmouseup!(e);
         e.preventDefault();
         scaling = false;
       }, false);
 
       drawer.canvas.addEventListener("touchcancel", function (e) {
-        window.onmouseup(e);
+        window.onmouseup!(e as any);
         e.preventDefault();
         scaling = false;
       }, false);
 
-      window.onmouseup = function (e) {
+      window.onmouseup = function (e: any) {
         last_mouse_x = null;
         last_mouse_y = null;
 
@@ -503,7 +503,7 @@ var
         window.removeEventListener("mousemove", do_field_move, true);
       };
 
-      window.onmousemove = function (e) {
+      window.onmousemove = function (e: any) {
         var coords = drawer.pixel2cell(e.clientX, e.clientY);
 
         set_text($("label_mou"), coords.x + ", " + coords.y);
@@ -514,7 +514,9 @@ var
         return false;
       };
 
-      drawer.canvas.onmousewheel = function (e) {
+      console.dir(drawer.canvas);
+
+      (drawer.canvas as any).onmousewheel = function (e: any) {
         e.preventDefault();
         drawer.zoom_at((e.wheelDelta || -e.detail) < 0, e.clientX, e.clientY);
 
@@ -523,9 +525,9 @@ var
         return false;
       };
 
-      drawer.canvas.addEventListener("DOMMouseScroll", drawer.canvas.onmousewheel, false);
+      drawer.canvas.addEventListener("DOMMouseScroll", (drawer.canvas as any).onmousewheel, false);
 
-      window.onkeydown = function (e) {
+      window.onkeydown = function (e: any) {
         var chr = e.which,
           do_redraw = false,
           target = e.target.nodeName;
@@ -564,16 +566,16 @@ var
         }
         else if (chr === 13) {
           // enter
-          $("run_button").onclick();
+          ($("run_button") as any).onclick();
           return false;
         }
         else if (chr === 32) {
           // space
-          $("step_button").onclick();
+          ($("step_button") as any).onclick();
           return false;
         }
         else if (chr === 9) {
-          $("superstep_button").onclick();
+          ($("superstep_button") as any).onclick();
           return false;
         }
         else if (chr === 189 || chr === 173 || chr === 109) {
@@ -588,7 +590,7 @@ var
         }
         else if (chr === 8) {
           // backspace
-          $("rewind_button").onclick();
+          ($("rewind_button") as any).onclick();
           return false;
         }
         else if (chr === 219 || chr === 221) {
@@ -617,14 +619,14 @@ var
         return true;
       };
 
-      $("faster_button").onclick = function () {
+      $("faster_button")!.onclick = function () {
         var step = life.step + 1;
 
         life.set_step(step);
         set_text($("label_step"), Math.pow(2, step));
       };
 
-      $("slower_button").onclick = function () {
+      $("slower_button")!.onclick = function () {
         if (life.step > 0) {
           var step = life.step - 1;
 
@@ -633,30 +635,30 @@ var
         }
       };
 
-      $("normalspeed_button").onclick = function () {
+      $("normalspeed_button")!.onclick = function () {
         life.set_step(0);
         set_text($("label_step"), 1);
       };
 
-      $("zoomin_button").onclick = function () {
+      $("zoomin_button")!.onclick = function () {
         drawer.zoom_centered(false);
         update_hud();
         lazy_redraw(life.root);
       };
 
-      $("zoomout_button").onclick = function () {
+      $("zoomout_button")!.onclick = function () {
         drawer.zoom_centered(true);
         update_hud();
         lazy_redraw(life.root);
       };
 
-      $("initial_pos_button").onclick = function () {
+      $("initial_pos_button")!.onclick = function () {
         fit_pattern();
         lazy_redraw(life.root);
         update_hud();
       };
 
-      $("middle_button").onclick = function () {
+      $("middle_button")!.onclick = function () {
         drawer.center_view();
         lazy_redraw(life.root);
       };
@@ -675,7 +677,7 @@ var
       for (var i = 0; i < positions.length; i++) {
         var node = document.getElementById(positions[i][0] + "_button");
 
-        node.onclick = (function (info) {
+        node!.onclick = (function (info: any) {
           return function () {
             drawer.move(info[1] * -30, info[2] * -30);
             lazy_redraw(life.root);
@@ -684,25 +686,25 @@ var
 
       }
 
-      var select_rules = $("select_rules").getElementsByTagName("span");
+      var select_rules = $("select_rules")!.getElementsByTagName("span");
 
       for (var i = 0; i < select_rules.length; i++) {
         /** @this {Element} */
-        select_rules[i].onclick = function () {
-          $("rule").value = this.getAttribute("data-rule");
+        select_rules[i].onclick = function (this: any) {
+          ($("rule") as HTMLInputElement).value = this.getAttribute("data-rule");
         };
       }
 
-      $("import_submit").onclick = function () {
+      $("import_submit")!.onclick = function () {
         var previous = current_pattern && current_pattern.title;
-        var files = $("import_file").files;
+        var files = ($("import_file") as any).files;
 
-        function load(text) {
+        function load(text: any) {
           setup_pattern(text, undefined);
 
           if (previous !== current_pattern.title) {
             show_alert(current_pattern);
-            $("import_file").value = "";
+            ($("import_file") as any).value = "";
           }
         }
 
@@ -714,38 +716,38 @@ var
           filereader.readAsText(files[0]);
         }
         else {
-          load($("import_text").value);
+          load(($("import_text") as any).value);
         }
       };
 
-      $("import_abort").onclick = function () {
+      $("import_abort")!.onclick = function () {
         hide_overlay();
       };
 
-      $("import_button").onclick = function () {
+      $("import_button")!.onclick = function () {
         show_overlay("import_dialog");
-        $("import_text").value = "";
+        ($("import_text") as any).value = "";
 
         set_text($("import_info"), "");
       };
 
-      $("export_button").onclick = function () {
+      $("export_button")!.onclick = function () {
         const rle = formats.generate_rle(life, undefined, ["Generated by copy.sh/life"]);
         download(rle, "pattern.rle");
       };
 
-      $("randomize_button").onclick = function () {
-        $("randomize_density").value = 0.5;
-        $("randomize_width").value = 200;
-        $("randomize_height").value = 200;
+      $("randomize_button")!.onclick = function () {
+        ($("randomize_density") as any).value = 0.5;
+        ($("randomize_width") as any).value = 200;
+        ($("randomize_height") as any).value = 200;
 
         show_overlay("randomize_dialog");
       };
 
-      $("randomize_submit").onclick = function () {
-        const density = Math.max(0, Math.min(1, +$("randomize_density").value)) || 0.5;
-        const width = Math.max(0, +$("randomize_width").value) || 200;
-        const height = Math.max(0, +$("randomize_height").value) || 200;
+      $("randomize_submit")!.onclick = function () {
+        const density = Math.max(0, Math.min(1, +($("randomize_density") as any).value)) || 0.5;
+        const width = Math.max(0, +($("randomize_width") as any).value) || 200;
+        const height = Math.max(0, +($("randomize_height") as any).value) || 200;
 
         stop(function () {
           life.clear_pattern();
@@ -782,19 +784,19 @@ var
         });
       };
 
-      $("settings_submit").onclick = function () {
-        var new_rule_s,
-          new_rule_b,
+      $("settings_submit")!.onclick = function () {
+        var new_rule_s: number | boolean,
+          new_rule_b: number | boolean,
           new_gen_step;
 
         hide_overlay();
 
-        new_rule_s = formats.parse_rule($("rule").value, true);
-        new_rule_b = formats.parse_rule($("rule").value, false);
+        new_rule_s = formats.parse_rule(($("rule") as any).value, true);
+        new_rule_b = formats.parse_rule(($("rule") as any).value, false);
 
-        new_gen_step = Math.round(Math.log(Number($("gen_step").value) || 0) / Math.LN2);
+        new_gen_step = Math.round(Math.log(Number(($("gen_step") as any).value) || 0) / Math.LN2);
 
-        life.set_rules(new_rule_s, new_rule_b);
+        life.set_rules(new_rule_s as any, new_rule_b as any);
 
         if (!new_gen_step || new_gen_step < 0) {
           life.set_step(0);
@@ -805,12 +807,12 @@ var
           set_text($("label_step"), Math.pow(2, new_gen_step));
         }
 
-        max_fps = Number($("max_fps").value);
+        max_fps = Number(($("max_fps") as any).value);
         if (!max_fps || max_fps < 0) {
           max_fps = DEFAULT_FPS;
         }
 
-        drawer.border_width = parseFloat($("border_width").value);
+        drawer.border_width = parseFloat(($("border_width") as any).value);
         if (isNaN(drawer.border_width) || drawer.border_width < 0 || drawer.border_width > .5) {
           drawer.border_width = DEFAULT_BORDER;
         }
@@ -825,16 +827,16 @@ var
 
         style_element.appendChild(style_text);
 
-        $("pattern_name").style.color =
-          $("statusbar").style.color = drawer.cell_color;
-        $("statusbar").style.textShadow = "0px 0px 1px " + drawer.cell_color;
+        ($("pattern_name") as any).style.color =
+          ($("statusbar") as any).style.color = drawer.cell_color;
+        ($("statusbar") as any).style.textShadow = "0px 0px 1px " + drawer.cell_color;
 
-        $("toolbar").style.color = drawer.background_color;
+        ($("toolbar") as any).style.color = drawer.background_color;
 
         lazy_redraw(life.root);
       };
 
-      $("settings_reset").onclick = function () {
+      $("settings_reset")!.onclick = function () {
         reset_settings();
 
         lazy_redraw(life.root);
@@ -842,36 +844,36 @@ var
         hide_overlay();
       };
 
-      $("settings_button").onclick = function () {
+      $("settings_button")!.onclick = function () {
         show_overlay("settings_dialog");
 
-        $("rule").value = formats.rule2str(life.rule_s, life.rule_b);
-        $("max_fps").value = max_fps;
-        $("gen_step").value = Math.pow(2, life.step);
+        ($("rule") as any).value = formats.rule2str(life.rule_s, life.rule_b);
+        ($("max_fps") as any).value = max_fps;
+        ($("gen_step") as any).value = Math.pow(2, life.step);
 
-        $("border_width").value = drawer.border_width;
+        ($("border_width") as any).value = drawer.border_width;
         //$("cell_color").value = drawer.cell_color;
         //$("background_color").value = drawer.background_color;
       };
 
-      $("settings_abort").onclick =
-        $("pattern_close").onclick =
-        $("alert_close").onclick =
-        $("randomize_abort").onclick =
-        $("about_close").onclick = function () {
+      $("settings_abort")!.onclick =
+        $("pattern_close")!.onclick =
+        $("alert_close")!.onclick =
+        $("randomize_abort")!.onclick =
+        $("about_close")!.onclick = function () {
           hide_overlay();
         };
 
-      $("pattern_name").onclick = function () {
+      $("pattern_name")!.onclick = function () {
         show_alert(current_pattern);
       };
 
-      $("about_button").onclick = function () {
+      $("about_button")!.onclick = function () {
         show_overlay("about");
       };
 
       //$("more_button").onclick = show_pattern_chooser;
-      $("pattern_button").onclick = show_pattern_chooser;
+      $("pattern_button")!.onclick = show_pattern_chooser;
 
       function show_pattern_chooser() {
         if (patterns_loaded) {
@@ -885,11 +887,11 @@ var
           var frame = document.createElement("iframe");
           frame.src = "examples/";
           frame.id = "example_frame";
-          $("pattern_list").appendChild(frame);
+          $("pattern_list")!.appendChild(frame);
 
           show_overlay("pattern_chooser");
 
-          window["load_pattern"] = function (id) {
+          (window["load_pattern" as any] as any) = function (id: any) {
             show_overlay("loading_popup");
             http_get(rle_link(id), function (text) {
               setup_pattern(text, id);
@@ -922,7 +924,7 @@ var
               size_element.className = "size";
 
               name_element.appendChild(size_element);
-              list.appendChild(name_element);
+              list!.appendChild(name_element);
 
               name_element.onclick = function () {
                 show_overlay("loading_popup");
@@ -960,7 +962,7 @@ var
             });
           };
 
-          examples_menu.appendChild(menu);
+          examples_menu!.appendChild(menu);
         });
       }
     }
@@ -970,7 +972,7 @@ var
 
 
   /** @param {*=} absolute */
-  function rle_link(id, absolute) {
+  function rle_link(id: any, absolute?: any) {
     if (!id.endsWith(".mc")) {
       id = id + ".rle";
     }
@@ -984,7 +986,7 @@ var
     }
   }
 
-  function view_link(id) {
+  function view_link(id: string) {
     let protocol = location.protocol === "http:" ? "http:" : "https:";
     return protocol + "//copy.sh/life/?pattern=" + id;
   }
@@ -992,7 +994,7 @@ var
   /**
    * @param {function()=} callback
    */
-  function stop(callback) {
+  function stop(callback?: () => void) {
     if (running) {
       running = false;
       set_text($("run_button"), "Run");
@@ -1032,7 +1034,7 @@ var
    * @param {string=} view_url
    * @param {string=} title
    */
-  function setup_pattern(pattern_text, pattern_id, pattern_source_url, view_url, title) {
+  function setup_pattern(pattern_text: string, pattern_id?: string, pattern_source_url?: string, view_url?: string, title?: string) {
     const is_mc = pattern_text.startsWith("[M2]");
 
     if (!is_mc) {
@@ -1074,7 +1076,9 @@ var
         set_text($("label_step"), Math.pow(2, step));
       }
 
-      life.save_rewind_state();
+      // life.save_rewind_state();
+      console.log('**************');
+
 
       if (result.rule_s && result.rule_b) {
         life.set_rules(result.rule_s, result.rule_b);
@@ -1092,7 +1096,7 @@ var
       set_text($("pattern_name"), result.title || "no name");
       set_title(result.title);
 
-      document.querySelector("meta[name=description]").content =
+      (document.querySelector("meta[name=description]") as any).content =
         result.comment.replace(/\n/g, " - ") + " - " + initial_description;
 
       if (!pattern_source_url && pattern_id) {
@@ -1140,10 +1144,10 @@ var
 
   function run() {
     var n = 0,
-      start,
-      last_frame,
-      frame_time = 1000 / max_fps,
-      interval,
+      start: number,
+      last_frame: number,
+      frame_time: number = 1000 / max_fps,
+      interval: number,
       per_frame = frame_time;
 
     set_text($("run_button"), "Stop");
@@ -1195,7 +1199,7 @@ var
     update();
   }
 
-  function step(is_single) {
+  function step(is_single: boolean) {
     var time = Date.now();
 
     if (life.generation === 0) {
@@ -1212,27 +1216,27 @@ var
     }
   }
 
-  function show_alert(pattern) {
+  function show_alert(pattern: any) {
     if (pattern.title || pattern.comment || pattern.urls.length) {
       show_overlay("alert");
 
       set_text($("pattern_title"), pattern.title || "");
       set_text($("pattern_description"), pattern.comment || "");
 
-      $("pattern_urls").innerHTML = "";
+      $("pattern_urls")!.innerHTML = "";
       for (let url of pattern.urls) {
         let a = document.createElement("a");
         a.href = url;
         a.textContent = url;
         a.target = "_blank";
-        $("pattern_urls").appendChild(a);
-        $("pattern_urls").appendChild(document.createElement("br"));
+        $("pattern_urls")!.appendChild(a);
+        $("pattern_urls")!.appendChild(document.createElement("br"));
       }
 
       if (pattern.view_url) {
         show_element($("pattern_link_container"));
         set_text($("pattern_link"), pattern.view_url);
-        $("pattern_link").href = pattern.view_url;
+        ($("pattern_link") as any).href = pattern.view_url;
       }
       else {
         hide_element($("pattern_link_container"));
@@ -1241,7 +1245,7 @@ var
       if (pattern.source_url) {
         show_element($("pattern_file_container"));
         set_text($("pattern_file_link"), pattern.source_url);
-        $("pattern_file_link").href = pattern.source_url;
+        ($("pattern_file_link") as any).href = pattern.source_url;
       }
       else {
         hide_element($("pattern_file_container"));
@@ -1249,13 +1253,13 @@ var
     }
   }
 
-  function show_overlay(overlay_id) {
+  function show_overlay(overlay_id: string) {
     show_element($("overlay"));
 
     // allow scroll bars when overlay is visible
     document.body.style.overflow = "auto";
 
-    var overlays = $("overlay").children;
+    var overlays = $("overlay")!.children;
 
     for (var i = 0; i < overlays.length; i++) {
       var child = overlays[i];
@@ -1277,7 +1281,7 @@ var
   /**
    * @param {number=} fps
    */
-  function update_hud(fps) {
+  function update_hud(fps?: any) {
     if (fps) {
       set_text($("label_fps"), fps.toFixed(1));
     }
@@ -1296,20 +1300,20 @@ var
     }
   }
 
-  function lazy_redraw(node) {
+  function lazy_redraw(node: any) {
     if (!running || max_fps < 15) {
       drawer.redraw(node);
     }
   }
 
-  function set_text(obj, text) {
+  function set_text(obj: any, text: any) {
     obj.textContent = String(text);
   }
 
   /**
    * fixes the width of an element to its current size
    */
-  function fix_width(element) {
+  function fix_width(element: any) {
     element.style.padding = "0";
     element.style.width = "";
 
@@ -1322,14 +1326,14 @@ var
   }
 
 
-  function validate_color(color_str) {
+  function validate_color(color_str: string) {
     return /^#(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(color_str) ? color_str : false;
   }
 
   /**
    * @param {function(string,number)=} onerror
    */
-  function http_get(url, onready, onerror) {
+  function http_get(url: string, onready: (response: string, url: string) => void, onerror?: (response: string, status: number) => void) {
     var http = new XMLHttpRequest();
 
     http.onreadystatechange = function () {
@@ -1355,13 +1359,13 @@ var
     };
   }
 
-  function http_get_multiple(urls, ondone, onerror) {
+  function http_get_multiple(urls: any[], ondone: () => void, onerror: () => void) {
     var count = urls.length,
       done = 0,
       error = false,
-      handlers;
+      handlers: any;
 
-    handlers = urls.map(function (url) {
+    handlers = urls.map(function (url: any) {
       return http_get(
         url.url,
         function (result) {
@@ -1401,24 +1405,24 @@ var
   /*
    * The mousemove event which allows moving around
    */
-  function do_field_move(e) {
+  function do_field_move(e: any) {
     if (last_mouse_x !== null) {
-      let dx = Math.round(e.clientX - last_mouse_x);
-      let dy = Math.round(e.clientY - last_mouse_y);
+      let dx = Math.round(e.clientX - (last_mouse_x as number));
+      let dy = Math.round(e.clientY - (last_mouse_y as number));
 
       drawer.move(dx, dy);
 
       //lazy_redraw(life.root);
 
-      last_mouse_x += dx;
-      last_mouse_y += dy;
+      (last_mouse_x as number) += dx;
+      (last_mouse_y as number) += dy;
     }
   }
 
   /*
    * The mousemove event which draw pixels
    */
-  function do_field_draw(e) {
+  function do_field_draw(e: any) {
     var coords = drawer.pixel2cell(e.clientX, e.clientY);
 
     // don't draw the same pixel twice
@@ -1432,11 +1436,11 @@ var
     }
   }
 
-  function $(id) {
+  function $(id: string) {
     return document.getElementById(id);
   }
 
-  function set_query(filename) {
+  function set_query(filename: string) {
     if (!window.history.replaceState) {
       return;
     }
@@ -1450,7 +1454,7 @@ var
   }
 
   /** @param {string=} title */
-  function set_title(title) {
+  function set_title(title?: string) {
     if (title) {
       document.title = title + " - " + initial_title;
     }
@@ -1459,15 +1463,15 @@ var
     }
   }
 
-  function hide_element(node) {
+  function hide_element(node: any) {
     node.style.display = "none";
   }
 
-  function show_element(node) {
+  function show_element(node: any) {
     node.style.display = "block";
   }
 
-  function pad0(str, n) {
+  function pad0(str: any, n: number) {
     while (str.length < n) {
       str = "0" + str;
     }
@@ -1477,7 +1481,7 @@ var
 
   // Put sep as a seperator into the thousands spaces of and Integer n
   // Doesn't handle numbers >= 10^21
-  function format_thousands(n, sep) {
+  function format_thousands(n: number, sep: any): string {
     if (n < 0) {
       return "-" + format_thousands(-n, sep);
     }
@@ -1486,7 +1490,7 @@ var
       return n + "";
     }
 
-    function format(str) {
+    function format(str: string): string {
       if (str.length < 3) {
         return str;
       }
@@ -1499,10 +1503,10 @@ var
   }
 
 
-  function debounce(func, timeout) {
-    var timeout_id;
+  function debounce(func: (...args: any) => void, timeout: number) {
+    var timeout_id: number;
 
-    return function () {
+    return function (this: any) {
       var me = this,
         args = arguments;
 
@@ -1514,7 +1518,7 @@ var
     };
   }
 
-  function download(text, name) {
+  function download(text: string, name: string) {
     var a = document.createElement("a");
     a["download"] = name;
     a.href = window.URL.createObjectURL(new Blob([text]));
