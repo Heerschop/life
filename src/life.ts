@@ -73,6 +73,20 @@ class TreeNode implements ITreeNode {
   }
 }
 
+
+class Leaf implements ITreeNode {
+  cache = null;
+  quick_cache = null;
+  hashmap_next = undefined;
+  nw = undefined as any;
+  ne = undefined as any;
+  sw = undefined as any;
+  se = undefined as any;
+
+  constructor(public id: number, public population: number, public level: number) {
+  }
+}
+
 export class LifeUniverse {
   public last_id = 0; // last id for nodes
   public hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
@@ -88,16 +102,8 @@ export class LifeUniverse {
   public rewind_state: ITreeNode = null as any as ITreeNode;
   public step = 0; // number of generations to calculate at one time, written as 2^n
   public generation = 0; // in which generation are we
-  public false_leaf: ITreeNode = {// living or dead leaf
-    id: 3,
-    population: 0,
-    level: 0,
-  } as any;
-  public true_leaf: ITreeNode = {
-    id: 2,
-    population: 1,
-    level: 0,
-  } as any;
+  public false_leaf = new Leaf(3, 0, 0);
+  public true_leaf = new Leaf(2, 1, 0);
 
   constructor() {
     this._powers[0] = 1;
@@ -142,7 +148,7 @@ export class LifeUniverse {
     return rule >> this._bitcounts[bitmask & 0x757] & 1;
   };
 
-  level1_create(bitmask: number) {
+  level1_create(bitmask: number): ITreeNode {
     return this.create_tree(
       bitmask & 1 ? this.true_leaf : this.false_leaf,
       bitmask & 2 ? this.true_leaf : this.false_leaf,
