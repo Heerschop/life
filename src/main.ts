@@ -514,8 +514,6 @@ var
         return false;
       };
 
-      console.dir(drawer.canvas);
-
       (drawer.canvas as any).onmousewheel = function (e: any) {
         e.preventDefault();
         drawer.zoom_at((e.wheelDelta || -e.detail) < 0, e.clientX, e.clientY);
@@ -1077,8 +1075,6 @@ var
       }
 
       // life.save_rewind_state();
-      console.log('**************');
-
 
       if (result.rule_s && result.rule_b) {
         life.set_rules(result.rule_s, result.rule_b);

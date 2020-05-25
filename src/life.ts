@@ -20,14 +20,12 @@ export interface IPoint {
 }
 
 interface ILeaf {
+  id: number;
   level: number;
   population: number;
-  id: number;
 }
 
-export interface ITreeNode {
-  level: number;
-  population: number;
+export interface ITreeNode extends ILeaf {
   cache: ITreeNode | null;
   quick_cache: ITreeNode | null;
   hashmap_next: ITreeNode | undefined;
@@ -35,7 +33,6 @@ export interface ITreeNode {
   ne: ITreeNode;
   sw: ITreeNode;
   se: ITreeNode;
-  id: number;
 };
 
 class TreeNode implements ITreeNode {
@@ -74,15 +71,7 @@ class TreeNode implements ITreeNode {
 }
 
 
-class Leaf implements ITreeNode {
-  cache = null;
-  quick_cache = null;
-  hashmap_next = undefined;
-  nw = undefined as any;
-  ne = undefined as any;
-  sw = undefined as any;
-  se = undefined as any;
-
+class Leaf implements ILeaf {
   constructor(public id: number, public population: number, public level: number) {
   }
 }
@@ -102,8 +91,8 @@ export class LifeUniverse {
   public rewind_state: ITreeNode = null as any as ITreeNode;
   public step = 0; // number of generations to calculate at one time, written as 2^n
   public generation = 0; // in which generation are we
-  public false_leaf = new Leaf(3, 0, 0);
-  public true_leaf = new Leaf(2, 1, 0);
+  public false_leaf: ILeaf = new Leaf(3, 0, 0);
+  public true_leaf: ILeaf = new Leaf(2, 1, 0);
 
   constructor() {
     this._powers[0] = 1;
@@ -172,7 +161,7 @@ export class LifeUniverse {
       }
     }
 
-    this.root = this.node_set_bit(this.root, x, y, living);
+    this.root = this.node_set_bit(this.root, x, y, living) as ITreeNode; // any cast
   };
 
   get_bit(x: number, y: number) {
@@ -299,7 +288,7 @@ export class LifeUniverse {
   };
 
   // create or search for a tree node given its children
-  create_tree(nw: ITreeNode, ne: ITreeNode, sw: ITreeNode, se: ITreeNode): ITreeNode {
+  create_tree(nw: ITreeNode | ILeaf, ne: ITreeNode | ILeaf, sw: ITreeNode | ILeaf, se: ITreeNode | ILeaf): ITreeNode {
     var hash = this.calc_hash(nw.id, ne.id, sw.id, se.id) & this.hashmap_size,
       node = this.hashmap[hash],
       prev;
@@ -311,7 +300,7 @@ export class LifeUniverse {
           return this.create_tree(nw, ne, sw, se);
         }
 
-        var new_node = new TreeNode(nw, ne, sw, se, this.last_id++);
+        const new_node = new TreeNode(nw as ITreeNode, ne as ITreeNode, sw as ITreeNode, se as ITreeNode, this.last_id++); // any cast
 
         if (prev !== undefined) {
           prev.hashmap_next = new_node;
@@ -762,31 +751,31 @@ export class LifeUniverse {
   };
 
 
-  node_set_bit(node: ITreeNode, x: number, y: number, living: boolean): ITreeNode {
+  node_set_bit(node: ITreeNode, x: number, y: number, living: boolean): ITreeNode | ILeaf {
     if (node.level === 0) {
       return living ? this.true_leaf : this.false_leaf;
     }
 
-    var offset = node.level === 1 ? 0 : this.pow2(node.level - 2),
-      nw = node.nw,
-      ne = node.ne,
-      sw = node.sw,
-      se = node.se;
+    const offset = node.level === 1 ? 0 : this.pow2(node.level - 2);
+    let nw: ILeaf = node.nw;
+    let ne: ILeaf = node.ne;
+    let sw: ILeaf = node.sw;
+    let se: ILeaf = node.se;
 
     if (x < 0) {
       if (y < 0) {
-        nw = this.node_set_bit(nw, x + offset, y + offset, living);
+        nw = this.node_set_bit(node.nw, x + offset, y + offset, living);
       }
       else {
-        sw = this.node_set_bit(sw, x + offset, y - offset, living);
+        sw = this.node_set_bit(node.sw, x + offset, y - offset, living);
       }
     }
     else {
       if (y < 0) {
-        ne = this.node_set_bit(ne, x - offset, y + offset, living);
+        ne = this.node_set_bit(node.ne, x - offset, y + offset, living);
       }
       else {
-        se = this.node_set_bit(se, x - offset, y - offset, living);
+        se = this.node_set_bit(node.se, x - offset, y - offset, living);
       }
     }
 
