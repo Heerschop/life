@@ -147,7 +147,7 @@ export class LifeCanvasDrawer {
       row_width = this.canvas_width - width;
 
     //console.assert(x >= 0 && y >= 0 && x + width <= canvas_width && y + height <= canvas_height);
-    var color = this.cell_color_rgb.r | this.cell_color_rgb.g << 8 | this.cell_color_rgb.b << 16 | 0xFF << 24;
+    const color = this.cell_color_rgb.r | this.cell_color_rgb.g << 8 | this.cell_color_rgb.b << 16 | 0xFF << 24;
 
     for (var i = 0; i < height; i++) {
       for (var j = 0; j < width; j++) {
@@ -160,19 +160,19 @@ export class LifeCanvasDrawer {
   }
 
   public redraw(node: ITreeNode): void {
-    var bg_color_rgb = LifeCanvasDrawer.color2rgb(this.background_color);
-    var bg_color_int = bg_color_rgb.r | bg_color_rgb.g << 8 | bg_color_rgb.b << 16 | 0xFF << 24;
+    const bg_color_rgb = LifeCanvasDrawer.color2rgb(this.background_color);
+    const bg_color_int = bg_color_rgb.r | bg_color_rgb.g << 8 | bg_color_rgb.b << 16 | 0xFF << 24;
 
     this._border_width = this.border_width * this.cell_width | 0;
     this.cell_color_rgb = LifeCanvasDrawer.color2rgb(this.cell_color);
 
-    var count = this.canvas_width * this.canvas_height;
+    const count = this.canvas_width * this.canvas_height;
 
     for (var i = 0; i < count; i++) {
       this.image_data_data[i] = bg_color_int;
     }
 
-    var size = Math.pow(2, node.level - 1) * this.cell_width;
+    const size = Math.pow(2, node.level - 1) * this.cell_width;
 
     this.draw_node(node, 2 * size, -size, -size);
 

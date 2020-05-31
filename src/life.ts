@@ -77,22 +77,23 @@ class Leaf implements ILeaf {
 }
 
 export class LifeUniverse {
-  public last_id = 0; // last id for nodes
-  public hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
-  public max_load = 0; // Size when the next GC will happen
-  public hashmap: Array<ITreeNode | undefined> = []; // the hashmap
-  public empty_tree_cache: ITreeNode[] = [];
-  public level2_cache: ITreeNode[] = [];
-  public _powers = new Float64Array(1024);
-  public _bitcounts = new Int8Array(0x758);
   public rule_b = 1 << 3; // current rule setting
   public rule_s = 1 << 2 | 1 << 3;
   public root!: ITreeNode;
   public rewind_state: ITreeNode;
   public step = 0; // number of generations to calculate at one time, written as 2^n
   public generation = 0; // in which generation are we
-  public false_leaf: ILeaf = new Leaf(3, 0, 0);
-  public true_leaf: ILeaf = new Leaf(2, 1, 0);
+
+  private last_id = 0; // last id for nodes
+  private hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
+  private max_load = 0; // Size when the next GC will happen
+  private hashmap: Array<ITreeNode | undefined> = []; // the hashmap
+  private empty_tree_cache: ITreeNode[] = [];
+  private level2_cache: ITreeNode[] = [];
+  private _powers = new Float64Array(1024);
+  private _bitcounts = new Int8Array(0x758);
+  private false_leaf: ILeaf = new Leaf(3, 0, 0);
+  private true_leaf: ILeaf = new Leaf(2, 1, 0);
 
   constructor() {
     this._powers[0] = 1;
