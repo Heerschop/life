@@ -1,12 +1,18 @@
 # Game of Life
 
-Conway's Game of Life implementation for your browser in TypeScript  based on the work of [**Fabian copy**](https://github.com/copy). Features an infinite field &amp; Hashlife.
+Conway's Game of Life implementation for your browser in TypeScript based on the work of [**Fabian copy**](https://github.com/copy). Features an infinite field &amp; Hashlife.
 
 ### Tools
-* [nvm](https://github.com/creationix/nvm) - node version manager
 * [tsc](https://www.typescriptlang.org/) - TypeScript
 * [rollup.js](https://rollupjs.org/) - Module bundler for JavaScript
 * [launch](https://www.npmjs.com/package/script-launcher) - Script Launcher
 
+### Basic setup
+```bash
+npm install
+npm start # And select serve
+```
+
 ### Resources
 * [The original Fabian copy online version](https://copy.sh/life/)
+* [Hashlife the memoized Game of Life algorithm](https://en.wikipedia.org/wiki/Hashlife)

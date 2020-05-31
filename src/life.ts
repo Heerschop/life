@@ -6,14 +6,49 @@ const MASK_TOP = 2;
 const MASK_RIGHT = 4;
 const MASK_BOTTOM = 8;
 
-class TreeNode {
-  level: any;
-  population: any;
-  cache: any;
-  quick_cache: any;
-  hashmap_next: any;
 
-  constructor(public nw: any, public ne: any, public sw: any, public se: any, public id: any) {
+export interface IBounds {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+};
+
+export interface IPoint {
+  x: number,
+  y: number
+}
+
+interface ILeaf {
+  id: number;
+  level: number;
+  population: number;
+}
+
+export interface ITreeNode extends ILeaf {
+  cache: ITreeNode | null;
+  quick_cache: ITreeNode | null;
+  hashmap_next: ITreeNode | undefined;
+  nw: ITreeNode;
+  ne: ITreeNode;
+  sw: ITreeNode;
+  se: ITreeNode;
+};
+
+class TreeNode implements ITreeNode {
+  level: number;
+  population: number;
+  cache: ITreeNode | null;
+  quick_cache: ITreeNode | null;
+  hashmap_next: ITreeNode | undefined;
+
+  constructor(
+    public nw: ITreeNode,
+    public ne: ITreeNode,
+    public sw: ITreeNode,
+    public se: ITreeNode,
+    public id: number
+  ) {
     // 2^level = width/height of area
     this.level = nw.level + 1;
 
@@ -36,43 +71,39 @@ class TreeNode {
 }
 
 
+class Leaf implements ILeaf {
+  constructor(public id: number, public population: number, public level: number) {
+  }
+}
 
 export class LifeUniverse {
   public last_id = 0; // last id for nodes
   public hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
   public max_load = 0; // Size when the next GC will happen
-  public hashmap: Array<TreeNode | undefined> = []; // the hashmap
-  public empty_tree_cache: TreeNode[] = [];
-  public level2_cache: TreeNode[] = [];
+  public hashmap: Array<ITreeNode | undefined> = []; // the hashmap
+  public empty_tree_cache: ITreeNode[] = [];
+  public level2_cache: ITreeNode[] = [];
   public _powers = new Float64Array(1024);
   public _bitcounts = new Int8Array(0x758);
   public rule_b = 1 << 3; // current rule setting
   public rule_s = 1 << 2 | 1 << 3;
-  public root: any = null;
-  public rewind_state: any = null;
+  public root: ITreeNode = null as any as ITreeNode;
+  public rewind_state: ITreeNode = null as any as ITreeNode;
   public step = 0; // number of generations to calculate at one time, written as 2^n
   public generation = 0; // in which generation are we
-  public false_leaf = {// living or dead leaf
-    id: 3,
-    population: 0,
-    level: 0,
-  };
-  public true_leaf = {
-    id: 2,
-    population: 1,
-    level: 0,
-  };
+  public false_leaf: ILeaf = new Leaf(3, 0, 0);
+  public true_leaf: ILeaf = new Leaf(2, 1, 0);
 
   constructor() {
     this._powers[0] = 1;
 
-    for (var i = 1; i < 1024; i++) {
+    for (let i = 1; i < 1024; i++) {
       this._powers[i] = this._powers[i - 1] * 2;
     }
 
     this._bitcounts.set([0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4]);
 
-    for (var i = 0x10; i < 0x758; i++) {
+    for (let i = 0x10; i < 0x758; i++) {
       this._bitcounts[i] = this._bitcounts[i & 0xF] +
         this._bitcounts[i >> 4 & 0xF] +
         this._bitcounts[i >> 8];
@@ -101,12 +132,12 @@ export class LifeUniverse {
   };
 
   eval_mask(bitmask: number) {
-    var rule = (bitmask & 32) ? this.rule_s : this.rule_b;
+    const rule = (bitmask & 32) ? this.rule_s : this.rule_b;
 
     return rule >> this._bitcounts[bitmask & 0x757] & 1;
   };
 
-  level1_create(bitmask: number) {
+  level1_create(bitmask: number): ITreeNode {
     return this.create_tree(
       bitmask & 1 ? this.true_leaf : this.false_leaf,
       bitmask & 2 ? this.true_leaf : this.false_leaf,
@@ -116,7 +147,7 @@ export class LifeUniverse {
   };
 
   set_bit(x: number, y: number, living: boolean) {
-    var level = this.get_level_from_bounds({ x: x, y: y });
+    const level = this.get_level_from_bounds({ x: x, y: y });
 
     if (living) {
       while (level > this.root.level) {
@@ -130,11 +161,11 @@ export class LifeUniverse {
       }
     }
 
-    this.root = this.node_set_bit(this.root, x, y, living);
+    this.root = this.node_set_bit(this.root, x, y, living) as ITreeNode; // any cast
   };
 
   get_bit(x: number, y: number) {
-    var level = this.get_level_from_bounds({ x: x, y: y });
+    const level = this.get_level_from_bounds({ x: x, y: y });
 
     if (level > this.root.level) {
       return false;
@@ -154,7 +185,7 @@ export class LifeUniverse {
       };
     }
 
-    var bounds = {
+    const bounds = {
       top: Infinity,
       left: Infinity,
       bottom: -Infinity,
@@ -167,7 +198,7 @@ export class LifeUniverse {
     return bounds;
   };
 
-  empty_tree(level: number): TreeNode {
+  empty_tree(level: number): ITreeNode {
     if (this.empty_tree_cache[level]) {
       return this.empty_tree_cache[level];
     }
@@ -184,8 +215,8 @@ export class LifeUniverse {
     return this.empty_tree_cache[level] = this.create_tree(t, t, t, t);
   };
 
-  expand_universe(node: any): TreeNode {
-    var t = this.empty_tree(node.level - 1);
+  expand_universe(node: ITreeNode): ITreeNode {
+    const t = this.empty_tree(node.level - 1);
 
     return this.create_tree(
       this.create_tree(t, t, t, node.nw),
@@ -197,9 +228,9 @@ export class LifeUniverse {
 
   // Preserve the tree, but remove all cached
   // generations forward
-  uncache(also_quick: any) {
-    for (var i = 0; i <= this.hashmap_size; i++) {
-      var node = this.hashmap[i];
+  uncache(also_quick: boolean) {
+    for (let i = 0; i <= this.hashmap_size; i++) {
+      const node = this.hashmap[i];
 
       if (node !== undefined) {
         node.cache = null;
@@ -213,9 +244,9 @@ export class LifeUniverse {
 
 
   // return false if a node is in the hashmap
-  in_hashmap(n: any) {
-    var hash = this.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size,
-      node = this.hashmap[hash];
+  in_hashmap(n: ITreeNode) {
+    const hash = this.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size;
+    var node = this.hashmap[hash];
 
     for (; ;) {
       if (node === undefined) {
@@ -230,9 +261,9 @@ export class LifeUniverse {
   };
 
   // insert a node into the hashmap
-  hashmap_insert(n: any) {
-    var hash = this.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size,
-      node = this.hashmap[hash],
+  hashmap_insert(n: ITreeNode) {
+    const hash = this.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size;
+    var node = this.hashmap[hash],
       prev;
 
     for (; ;) {
@@ -257,9 +288,9 @@ export class LifeUniverse {
   };
 
   // create or search for a tree node given its children
-  create_tree(nw: any, ne: any, sw: any, se: any): TreeNode {
-    var hash = this.calc_hash(nw.id, ne.id, sw.id, se.id) & this.hashmap_size,
-      node = this.hashmap[hash],
+  create_tree(nw: ITreeNode | ILeaf, ne: ITreeNode | ILeaf, sw: ITreeNode | ILeaf, se: ITreeNode | ILeaf): ITreeNode {
+    const hash = this.calc_hash(nw.id, ne.id, sw.id, se.id) & this.hashmap_size;
+    var node = this.hashmap[hash],
       prev;
 
     for (; ;) {
@@ -269,7 +300,7 @@ export class LifeUniverse {
           return this.create_tree(nw, ne, sw, se);
         }
 
-        var new_node = new TreeNode(nw, ne, sw, se, this.last_id++);
+        const new_node = new TreeNode(nw as ITreeNode, ne as ITreeNode, sw as ITreeNode, se as ITreeNode, this.last_id++); // any cast
 
         if (prev !== undefined) {
           prev.hashmap_next = new_node;
@@ -332,7 +363,7 @@ export class LifeUniverse {
     this.max_load = this.hashmap_size * LOAD_FACTOR | 0;
 
 
-    for (var i = 0; i <= this.hashmap_size; i++)
+    for (let i = 0; i <= this.hashmap_size; i++)
       this.hashmap[i] = undefined;
 
     this.last_id = 4;
@@ -346,7 +377,7 @@ export class LifeUniverse {
   };
 
   // the hash function used for the hashmap
-  calc_hash(nw_id: any, ne_id: any, sw_id: any, se_id: any) {
+  calc_hash(nw_id: number, ne_id: number, sw_id: number, se_id: number) {
     //nw_id = nw_id | 0;
     //ne_id = ne_id | 0;
     //sw_id = sw_id | 0;
@@ -360,7 +391,7 @@ export class LifeUniverse {
     //nw_id = se_id + (nw_id << 6) + (nw_id << 16) - nw_id | 0;
     //return nw_id | 0;
 
-    var hash = ((nw_id * 23 ^ ne_id) * 23 ^ sw_id) * 23 ^ se_id;
+    const hash = ((nw_id * 23 ^ ne_id) * 23 ^ sw_id) * 23 ^ se_id;
     return hash;
   };
 
@@ -372,14 +403,14 @@ export class LifeUniverse {
     this.empty_tree_cache = [];
     this.level2_cache = Array(0x10000);
 
-    for (var i = 0; i <= this.hashmap_size; i++)
+    for (let i = 0; i <= this.hashmap_size; i++)
       this.hashmap[i] = undefined;
 
     this.root = this.empty_tree(3);
     this.generation = 0;
   };
 
-  get_bounds(field_x: any, field_y: any) {
+  get_bounds(field_x: Int32Array, field_y: Int32Array): IBounds {
     if (!field_x.length) {
       return {
         top: 0,
@@ -389,7 +420,7 @@ export class LifeUniverse {
       };
     }
 
-    var bounds = {
+    const bounds = {
       top: field_y[0],
       left: field_x[0],
       bottom: field_y[0],
@@ -397,8 +428,8 @@ export class LifeUniverse {
     },
       len = field_x.length;
 
-    for (var i = 1; i < len; i++) {
-      var x = field_x[i],
+    for (let i = 1; i < len; i++) {
+      const x = field_x[i],
         y = field_y[i];
 
       if (x < bounds.left) {
@@ -423,13 +454,13 @@ export class LifeUniverse {
    * given a point { x, y } or a bounds object { left, top, bottom, right },
    * return the quadtree level that is required to contain this point
    */
-  get_level_from_bounds(bounds: any) {
+  get_level_from_bounds(bounds: IPoint | IBounds) {
     // root should always be at least level 3
-    var max = 4,
-      keys = Object.keys(bounds);
+    var max = 4;
+    const keys = Object.keys(bounds);
 
-    for (var i = 0; i < keys.length; i++) {
-      var coordinate = bounds[keys[i]];
+    for (let i = 0; i < keys.length; i++) {
+      const coordinate = (bounds as any)[keys[i]];
 
       if (coordinate + 1 > max) {
         max = coordinate + 1;
@@ -442,85 +473,85 @@ export class LifeUniverse {
     return Math.ceil(Math.log(max) / Math.LN2) + 1;
   };
 
-  field2tree(field: any, level: number) {
-    var tree = make_node(),
-      len = field.length;
+  // field2tree(field: any, level: number) {
+  //   var tree = make_node(),
+  //     len = field.length;
 
-    function make_node(): { nw: any, ne: any, sw: any, se: any } {
-      return { nw: false, ne: false, sw: false, se: false };
-    }
+  //   function make_node(): { nw: any, ne: any, sw: any, se: any } {
+  //     return { nw: false, ne: false, sw: false, se: false };
+  //   }
 
-    for (var i = 0; i < len; i++) {
-      var x = field[i].x,
-        y = field[i].y,
-        node = tree;
+  //   for (let i = 0; i < len; i++) {
+  //     var x = field[i].x,
+  //       y = field[i].y,
+  //       node = tree;
 
-      for (var j = level - 2; j >= 0; j--) {
-        var offset = this.pow2(j);
+  //     for (let j = level - 2; j >= 0; j--) {
+  //       var offset = this.pow2(j);
 
-        if (x < 0) {
-          x += offset;
-          if (y < 0) {
-            y += offset;
-            if (!node.nw) {
-              node.nw = make_node();
-            }
-            node = node.nw;
-          }
-          else {
-            y -= offset;
-            if (!node.sw) {
-              node.sw = make_node();
-            }
-            node = node.sw;
-          }
-        }
-        else {
-          x -= offset;
-          if (y < 0) {
-            y += offset;
-            if (!node.ne) {
-              node.ne = make_node();
-            }
-            node = node.ne;
-          }
-          else {
-            y -= offset;
-            if (!node.se) {
-              node.se = make_node();
-            }
-            node = node.se;
-          }
-        }
-      }
+  //       if (x < 0) {
+  //         x += offset;
+  //         if (y < 0) {
+  //           y += offset;
+  //           if (!node.nw) {
+  //             node.nw = make_node();
+  //           }
+  //           node = node.nw;
+  //         }
+  //         else {
+  //           y -= offset;
+  //           if (!node.sw) {
+  //             node.sw = make_node();
+  //           }
+  //           node = node.sw;
+  //         }
+  //       }
+  //       else {
+  //         x -= offset;
+  //         if (y < 0) {
+  //           y += offset;
+  //           if (!node.ne) {
+  //             node.ne = make_node();
+  //           }
+  //           node = node.ne;
+  //         }
+  //         else {
+  //           y -= offset;
+  //           if (!node.se) {
+  //             node.se = make_node();
+  //           }
+  //           node = node.se;
+  //         }
+  //       }
+  //     }
 
-      if (x < 0) {
-        if (y < 0) {
-          node.nw = true;
-        }
-        else {
-          node.sw = true;
-        }
-      }
-      else {
-        if (y < 0) {
-          node.ne = true;
-        }
-        else {
-          node.se = true;
-        }
-      }
-    }
+  //     if (x < 0) {
+  //       if (y < 0) {
+  //         node.nw = true;
+  //       }
+  //       else {
+  //         node.sw = true;
+  //       }
+  //     }
+  //     else {
+  //       if (y < 0) {
+  //         node.ne = true;
+  //       }
+  //       else {
+  //         node.se = true;
+  //       }
+  //     }
+  //   }
 
-    return tree;
-  };
+  //   return tree;
+  // };
 
   /*
    * move a field so that (0,0) is in the middle
    */
-  make_center(field_x: any, field_y: any, bounds: any) {
-    var offset_x = Math.round((bounds.left - bounds.right) / 2) - bounds.left,
-      offset_y = Math.round((bounds.top - bounds.bottom) / 2) - bounds.top;
+  make_center(field_x: Int32Array, field_y: Int32Array, bounds: IBounds) {
+    const offset_x = Math.round((bounds.left - bounds.right) / 2) - bounds.left;
+    const offset_y = Math.round((bounds.top - bounds.bottom) / 2) - bounds.top;
 
     this.move_field(field_x, field_y, offset_x, offset_y);
 
@@ -530,24 +561,24 @@ export class LifeUniverse {
     bounds.bottom += offset_y;
   };
 
-  move_field(field_x: any, field_y: any, offset_x: any, offset_y: any) {
-    var len = field_x.length;
+  move_field(field_x: Int32Array, field_y: Int32Array, offset_x: number, offset_y: number) {
+    const len = field_x.length;
 
-    for (var i = 0; i < len; i++) {
+    for (let i = 0; i < len; i++) {
       field_x[i] += offset_x;
       field_y[i] += offset_y;
     }
   };
 
   /** @param {*=} bounds */
-  setup_field(field_x: any, field_y: any, bounds: any) {
+  setup_field(field_x: Int32Array, field_y: Int32Array, bounds: IBounds) {
     if (bounds === undefined) {
       bounds = this.get_bounds(field_x, field_y);
     }
 
-    var level = this.get_level_from_bounds(bounds),
-      offset = this.pow2(level - 1),
-      count = field_x.length;
+    const level = this.get_level_from_bounds(bounds);
+    const offset = this.pow2(level - 1);
+    const count = field_x.length;
 
     //console.log(field_x, field_y);
     this.move_field(field_x, field_y, offset, offset);
@@ -562,12 +593,12 @@ export class LifeUniverse {
     //console.profileEnd("setup");
   };
 
-  partition(start: number, end: number, test_field: any[], other_field: any[], offset: number) {
+  partition(start: number, end: number, test_field: Int32Array, other_field: Int32Array, offset: number) {
     // Like quicksort's partition: Seperate the values from start to end by
     // the bitmask in offset in the array test_field, returning the middle
-    var i = start,
-      j = end,
-      swap;
+    var i = start;
+    var j = end;
+    var swap;
 
     while (i <= j) {
       while (i <= end && (test_field[i] & offset) === 0) {
@@ -597,7 +628,7 @@ export class LifeUniverse {
     return i;
   };
 
-  setup_field_recurse(start: number, end: number, field_x: any, field_y: any, level: number): any {
+  setup_field_recurse(start: number, end: number, field_x: Int32Array, field_y: Int32Array, level: number): ITreeNode {
     if (start > end) {
       return this.empty_tree(level);
     }
@@ -608,7 +639,7 @@ export class LifeUniverse {
 
     level--;
 
-    var offset = 1 << level,
+    const offset = 1 << level,
       // here we split the field from start to end into 4 parts:
       //   [Start, part2] -> nw
       //   [Part2, part3] -> ne
@@ -630,12 +661,12 @@ export class LifeUniverse {
     );
   };
 
-  level2_setup(start: number, end: number, field_x: any, field_y: any) {
+  level2_setup(start: number, end: number, field_x: Int32Array, field_y: Int32Array) {
     var set = 0,
       x,
       y;
 
-    for (var i = start; i <= end; i++) {
+    for (let i = start; i <= end; i++) {
       x = field_x[i];
       y = field_y[i];
 
@@ -656,37 +687,35 @@ export class LifeUniverse {
     );
   };
 
-  setup_meta(otca_on: any, otca_off: any, field: any, bounds: any) {
-    var level = this.get_level_from_bounds(bounds),
-      node = this.field2tree(field, level);
+  // setup_meta(otca_on: ITreeNode, otca_off: ITreeNode, field: Int32Array, bounds: IBounds) {
+  //   var level = this.get_level_from_bounds(bounds),
+  //     node = this.field2tree(field, level);
 
-    this.root = setup_meta_from_tree(node, level + 11);
+  //   this.root = setup_meta_from_tree(node, level + 11);
 
-    const that = this;
+  //   const that = this;
 
-    console.log('************************');
+  //   function setup_meta_from_tree(node: any, level: number): any {
+  //     if (level === 11) {
+  //       return node ? otca_on : otca_off;
+  //     }
+  //     else if (!node) {
+  //       var dead = setup_meta_from_tree(false, level - 1);
 
-    function setup_meta_from_tree(node: any, level: number): any {
-      if (level === 11) {
-        return node ? otca_on : otca_off;
-      }
-      else if (!node) {
-        var dead = setup_meta_from_tree(false, level - 1);
+  //       return that.create_tree(dead, dead, dead, dead);
+  //     }
+  //     else {
+  //       level--;
 
-        return that.create_tree(dead, dead, dead, dead);
-      }
-      else {
-        level--;
-
-        return that.create_tree(
-          setup_meta_from_tree(node.nw, level),
-          setup_meta_from_tree(node.ne, level),
-          setup_meta_from_tree(node.sw, level),
-          setup_meta_from_tree(node.se, level)
-        );
-      }
-    }
-  };
+  //       return that.create_tree(
+  //         setup_meta_from_tree(node.nw, level),
+  //         setup_meta_from_tree(node.ne, level),
+  //         setup_meta_from_tree(node.sw, level),
+  //         setup_meta_from_tree(node.se, level)
+  //       );
+  //     }
+  //   }
+  // };
 
 
   //get_field(node) {
@@ -700,7 +729,7 @@ export class LifeUniverse {
   //};
 
   // set the base step for generations forward
-  set_step(step: any) {
+  set_step(step: number) {
     if (step !== this.step) {
       this.step = step;
 
@@ -722,38 +751,38 @@ export class LifeUniverse {
   };
 
 
-  node_set_bit(node: any, x: number, y: number, living: boolean) {
+  node_set_bit(node: ITreeNode, x: number, y: number, living: boolean): ITreeNode | ILeaf {
     if (node.level === 0) {
       return living ? this.true_leaf : this.false_leaf;
     }
 
-    var offset = node.level === 1 ? 0 : this.pow2(node.level - 2),
-      nw = node.nw,
-      ne = node.ne,
-      sw = node.sw,
-      se = node.se;
+    const offset = node.level === 1 ? 0 : this.pow2(node.level - 2);
+    let nw: ILeaf = node.nw;
+    let ne: ILeaf = node.ne;
+    let sw: ILeaf = node.sw;
+    let se: ILeaf = node.se;
 
     if (x < 0) {
       if (y < 0) {
-        nw = this.node_set_bit(nw, x + offset, y + offset, living);
+        nw = this.node_set_bit(node.nw, x + offset, y + offset, living);
       }
       else {
-        sw = this.node_set_bit(sw, x + offset, y - offset, living);
+        sw = this.node_set_bit(node.sw, x + offset, y - offset, living);
       }
     }
     else {
       if (y < 0) {
-        ne = this.node_set_bit(ne, x - offset, y + offset, living);
+        ne = this.node_set_bit(node.ne, x - offset, y + offset, living);
       }
       else {
-        se = this.node_set_bit(se, x - offset, y - offset, living);
+        se = this.node_set_bit(node.se, x - offset, y - offset, living);
       }
     }
 
     return this.create_tree(nw, ne, sw, se);
   };
 
-  node_get_bit(node: any, x: number, y: number): any {
+  node_get_bit(node: ITreeNode, x: number, y: number): boolean {
     if (node.population === 0) {
       return false;
     }
@@ -762,7 +791,7 @@ export class LifeUniverse {
       return true;
     }
 
-    var offset = node.level === 1 ? 0 : this.pow2(node.level - 2);
+    const offset = node.level === 1 ? 0 : this.pow2(node.level - 2);
 
     if (x < 0) {
       if (y < 0) {
@@ -782,26 +811,26 @@ export class LifeUniverse {
     }
   };
 
-  node_get_field(node: any, left: number, top: number, field: any[]) {
-    if (node.population === 0) {
-      return;
-    }
+  // node_get_field(node: ITreeNode, left: number, top: number, field: any[]) {
+  //   if (node.population === 0) {
+  //     return;
+  //   }
 
-    if (node.level === 0) {
-      field.push({ x: left, y: top });
-    }
-    else {
-      var offset = this.pow2(node.level - 1);
+  //   if (node.level === 0) {
+  //     field.push({ x: left, y: top });
+  //   }
+  //   else {
+  //     var offset = this.pow2(node.level - 1);
 
-      this.node_get_field(node.nw, left, top, field);
-      this.node_get_field(node.sw, left, top + offset, field);
-      this.node_get_field(node.ne, left + offset, top, field);
-      this.node_get_field(node.se, left + offset, top + offset, field);
-    }
-  };
+  //     this.node_get_field(node.nw, left, top, field);
+  //     this.node_get_field(node.sw, left, top + offset, field);
+  //     this.node_get_field(node.ne, left + offset, top, field);
+  //     this.node_get_field(node.se, left + offset, top + offset, field);
+  //   }
+  // };
 
-  node_level2_next(node: any) {
-    var nw = node.nw,
+  node_level2_next(node: ITreeNode) {
+    const nw = node.nw,
       ne = node.ne,
       sw = node.sw,
       se = node.se,
@@ -821,7 +850,7 @@ export class LifeUniverse {
 
   };
 
-  node_next_generation(node: any): any {
+  node_next_generation(node: ITreeNode): ITreeNode {
     if (node.cache) {
       return node.cache;
     }
@@ -839,7 +868,7 @@ export class LifeUniverse {
       }
     }
 
-    var nw = node.nw,
+    const nw = node.nw,
       ne = node.ne,
       sw = node.sw,
       se = node.se,
@@ -861,7 +890,7 @@ export class LifeUniverse {
     );
   };
 
-  node_quick_next_generation(node: any): any {
+  node_quick_next_generation(node: ITreeNode): ITreeNode {
     if (node.quick_cache !== null) {
       return node.quick_cache;
     }
@@ -870,7 +899,7 @@ export class LifeUniverse {
       return node.quick_cache = this.node_level2_next(node);
     }
 
-    var nw = node.nw,
+    const nw = node.nw,
       ne = node.ne,
       sw = node.sw,
       se = node.se,
@@ -893,7 +922,7 @@ export class LifeUniverse {
     );
   };
 
-  node_hash(node: any) {
+  node_hash(node: ITreeNode) {
     if (!this.in_hashmap(node)) {
       // Update the id. We have looked for an old id, as
       // the the hashmap has been cleared and ids have been
@@ -920,7 +949,7 @@ export class LifeUniverse {
     }
   };
 
-  node_get_boundary(node: any, left: number, top: number, find_mask: number, boundary: any) {
+  node_get_boundary(node: ITreeNode, left: number, top: number, find_mask: number, boundary: IBounds) {
     if (node.population === 0 || !find_mask) {
       return;
     }
@@ -937,7 +966,7 @@ export class LifeUniverse {
         boundary.bottom = top;
     }
     else {
-      var offset = this.pow2(node.level - 1);
+      const offset = this.pow2(node.level - 1);
 
       if (left >= boundary.left && left + offset * 2 <= boundary.right &&
         top >= boundary.top && top + offset * 2 <= boundary.bottom) {

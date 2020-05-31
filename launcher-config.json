@@ -2,14 +2,14 @@
   "scripts": {
     "serve": [
       [
-        "sleep 5 && lite-server",
+        "lite-server",
         "build --watch"
       ]
     ],
     "build": [
       [
         "compile $*",
-        "sleep 4 && bundle $*"
+        "bundle $*"
       ]
     ],
     "compile": [
