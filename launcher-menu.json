@@ -1,9 +1,9 @@
 {
   "menu": {
     "description": "action",
-    "serve:Serve your app.": "serve",
-    "build:Build your app.": "build",
-    "tools": {
+    "serve:Builds and serves your app, rebuilding on file changes.": "serve",
+    "build:Compiles the app into an output directory named dist.": "build",
+    "tools:Execute individual actions.": {
       "compile:Compile and watch files": "compile --watch",
       "bundle:Watch files in bundle and rebuild on changes": "bundle --watch",
       "lite-server:Lightweight development web server": "lite-server"
