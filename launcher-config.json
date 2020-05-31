@@ -21,7 +21,7 @@
         "tsc $*"
       ]
     ],
-    "bundle":"rollup --config $*",
+    "bundle": "rollup --config --waitForBundleInput $*",
     "clean": [
       "rimraf dist tmp"
     ]
