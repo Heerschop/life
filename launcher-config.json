@@ -7,23 +7,16 @@
       ]
     ],
     "build": [
-      [
-        "compile $*",
-        "bundle $*"
-      ]
-    ],
-    "compile": [
       "clean",
       "echo ${launch_style_cyan}${launch_style_bold}src → tmp${launch_style_normal}",
       [
         "cpx 'src/assets/**/*'  dist/assets --verbose",
         "cpx 'src/*.{html,css}' dist        --verbose $*",
-        "tsc $*"
+        "rollup --config $*"
       ]
     ],
-    "bundle": "rollup --config --waitForBundleInput $*",
     "clean": [
-      "rimraf dist tmp"
+      "rimraf dist"
     ]
   }
 }
