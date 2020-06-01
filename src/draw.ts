@@ -1,9 +1,9 @@
 import { ITreeNode, IBounds, IPoint } from "./life";
 
 interface IColor {
-  r: number;
-  g: number;
-  b: number;
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
 }
 
 export class LifeCanvasDrawer {
@@ -53,14 +53,10 @@ export class LifeCanvasDrawer {
 
   public set_size(width: number, height: number): void {
     if (width !== this.canvas_width || height !== this.canvas_height) {
-      if (true) {
-        this.canvas.style.width = width + "px";
-        this.canvas.style.height = height + "px";
-        var factor = window.devicePixelRatio;
-      }
-      else {
-        var factor = 1;
-      }
+      const factor = window.devicePixelRatio;
+
+      this.canvas.style.width = width + "px";
+      this.canvas.style.height = height + "px";
 
       this.pixel_ratio = factor;
 
@@ -76,7 +72,7 @@ export class LifeCanvasDrawer {
       this.image_data = this.context.createImageData(this.canvas_width, this.canvas_height);
       this.image_data_data = new Int32Array(this.image_data.data.buffer);
 
-      for (var i = 0; i < width * height; i++) {
+      for (let i = 0; i < width * height; i++) {
         this.image_data_data[i] = 0xFF << 24;
       }
     }
@@ -118,8 +114,8 @@ export class LifeCanvasDrawer {
   }
 
   private fill_square(x: number, y: number, size: number): void {
-    var width = size - this._border_width,
-      height = width;
+    let width = size - this._border_width;
+    let height = width;
 
     if (x < 0) {
       width += x;
@@ -143,14 +139,14 @@ export class LifeCanvasDrawer {
       return;
     }
 
-    var pointer = x + y * this.canvas_width,
-      row_width = this.canvas_width - width;
+    let pointer = x + y * this.canvas_width;
+    let row_width = this.canvas_width - width;
 
     //console.assert(x >= 0 && y >= 0 && x + width <= canvas_width && y + height <= canvas_height);
     const color = this.cell_color_rgb.r | this.cell_color_rgb.g << 8 | this.cell_color_rgb.b << 16 | 0xFF << 24;
 
-    for (var i = 0; i < height; i++) {
-      for (var j = 0; j < width; j++) {
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
         this.image_data_data[pointer] = color;
 
         pointer++;
@@ -168,7 +164,7 @@ export class LifeCanvasDrawer {
 
     const count = this.canvas_width * this.canvas_height;
 
-    for (var i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++) {
       this.image_data_data[i] = bg_color_int;
     }
 
@@ -257,11 +253,11 @@ export class LifeCanvasDrawer {
   }
 
   public fit_bounds(bounds: IBounds): void {
-    var width = bounds.right - bounds.left,
-      height = bounds.bottom - bounds.top,
-      relative_size,
-      x,
-      y;
+    let width = bounds.right - bounds.left;
+    let height = bounds.bottom - bounds.top;
+    let relative_size: number;
+    let x: number;
+    let y: number;
 
     if (isFinite(width) && isFinite(height)) {
       relative_size = Math.min(
@@ -287,10 +283,9 @@ export class LifeCanvasDrawer {
   }
 
   public draw_cell(x: number, y: number, set: boolean): void {
-    var cell_x = x * this.cell_width + this.canvas_offset_x,
-      cell_y = y * this.cell_width + this.canvas_offset_y,
-      width = Math.ceil(this.cell_width) -
-        (this.cell_width * this.border_width | 0);
+    let cell_x = x * this.cell_width + this.canvas_offset_x;
+    let cell_y = y * this.cell_width + this.canvas_offset_y;
+    let width = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
 
     if (set) {
       this.context.fillStyle = this.cell_color;

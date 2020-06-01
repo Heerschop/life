@@ -6,47 +6,50 @@ const MASK_TOP = 2;
 const MASK_RIGHT = 4;
 const MASK_BOTTOM = 8;
 
+type ReadWrite<T> = {
+  -readonly [P in keyof T]: T[P];
+};
 
 export interface IBounds {
-  top: number;
-  left: number;
-  bottom: number;
-  right: number;
+  readonly top: number;
+  readonly left: number;
+  readonly bottom: number;
+  readonly right: number;
 };
 
 export interface IPoint {
-  x: number,
-  y: number
+  readonly x: number,
+  readonly y: number
 }
 
 interface ILeaf {
-  id: number;
-  level: number;
-  population: number;
+  readonly id: number;
+  readonly level: number;
+  readonly population: number;
 }
 
 export interface ITreeNode extends ILeaf {
-  cache: ITreeNode | null;
-  quick_cache: ITreeNode | null;
-  hashmap_next: ITreeNode | undefined;
-  nw: ITreeNode;
-  ne: ITreeNode;
-  sw: ITreeNode;
-  se: ITreeNode;
+  readonly cache: ITreeNode | null;
+  readonly quick_cache: ITreeNode | null;
+  readonly hashmap_next: ITreeNode | undefined;
+  readonly nw: ITreeNode;
+  readonly ne: ITreeNode;
+  readonly sw: ITreeNode;
+  readonly se: ITreeNode;
 };
 
 class TreeNode implements ITreeNode {
-  level: number;
-  population: number;
-  cache: ITreeNode | null;
-  quick_cache: ITreeNode | null;
-  hashmap_next: ITreeNode | undefined;
+  public readonly level: number;
+  public readonly population: number;
+  public cache: ITreeNode | null;
+  public quick_cache: ITreeNode | null;
+  public hashmap_next: ITreeNode | undefined;
 
   constructor(
-    public nw: ITreeNode,
-    public ne: ITreeNode,
-    public sw: ITreeNode,
-    public se: ITreeNode,
+    public readonly nw: ITreeNode,
+    public readonly ne: ITreeNode,
+    public readonly sw: ITreeNode,
+    public readonly se: ITreeNode,
     public id: number
   ) {
     // 2^level = width/height of area
@@ -70,9 +73,12 @@ class TreeNode implements ITreeNode {
   }
 }
 
-
 class Leaf implements ILeaf {
-  constructor(public id: number, public population: number, public level: number) {
+  constructor(
+    public readonly id: number,
+    public readonly population: number,
+    public readonly level: number
+  ) {
   }
 }
 
@@ -87,7 +93,7 @@ export class LifeUniverse {
   private last_id = 0; // last id for nodes
   private hashmap_size = 0; // Size of the hashmap. Always a power of 2 minus 1
   private max_load = 0; // Size when the next GC will happen
-  private hashmap: Array<ITreeNode | undefined> = []; // the hashmap
+  private hashmap: Array<TreeNode | undefined> = []; // the hashmap
   private empty_tree_cache: ITreeNode[] = [];
   private level2_cache: ITreeNode[] = [];
   private _powers = new Float64Array(1024);
@@ -211,16 +217,16 @@ export class LifeUniverse {
       return this.empty_tree_cache[level];
     }
 
-    var t;
+    let leaf: ILeaf;
 
     if (level === 1) {
-      t = this.false_leaf;
+      leaf = this.false_leaf;
     }
     else {
-      t = this.empty_tree(level - 1);
+      leaf = this.empty_tree(level - 1);
     }
 
-    return this.empty_tree_cache[level] = this.create_tree(t, t, t, t);
+    return this.empty_tree_cache[level] = this.create_tree(leaf, leaf, leaf, leaf);
   };
 
   private expand_universe(node: ITreeNode): ITreeNode {
@@ -254,7 +260,7 @@ export class LifeUniverse {
   // return false if a node is in the hashmap
   private in_hashmap(n: ITreeNode): boolean {
     const hash = LifeUniverse.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size;
-    var node = this.hashmap[hash];
+    let node = this.hashmap[hash];
 
     for (; ;) {
       if (node === undefined) {
@@ -271,8 +277,8 @@ export class LifeUniverse {
   // insert a node into the hashmap
   private hashmap_insert(n: ITreeNode): void {
     const hash = LifeUniverse.calc_hash(n.nw.id, n.ne.id, n.sw.id, n.se.id) & this.hashmap_size;
-    var node = this.hashmap[hash],
-      prev;
+    let node = this.hashmap[hash];
+    let prev: TreeNode | undefined;
 
     for (; ;) {
       if (node === undefined) {
@@ -298,8 +304,8 @@ export class LifeUniverse {
   // create or search for a tree node given its children
   private create_tree(nw: ITreeNode | ILeaf, ne: ITreeNode | ILeaf, sw: ITreeNode | ILeaf, se: ITreeNode | ILeaf): ITreeNode {
     const hash = LifeUniverse.calc_hash(nw.id, ne.id, sw.id, se.id) & this.hashmap_size;
-    var node = this.hashmap[hash],
-      prev;
+    let node = this.hashmap[hash];
+    let prev: TreeNode | undefined;
 
     for (; ;) {
       if (node === undefined) {
@@ -332,7 +338,7 @@ export class LifeUniverse {
   };
 
   public next_generation(is_single: boolean): void {
-    var root = this.root;
+    let root = this.root;
 
     while (
       (is_single && root.level <= this.step + 2) ||
@@ -464,7 +470,7 @@ export class LifeUniverse {
    */
   private static get_level_from_bounds(bounds: IPoint | IBounds): number {
     // root should always be at least level 3
-    var max = 4;
+    let max = 4;
     const keys = Object.keys(bounds) as Array<keyof (IPoint & IBounds)>;
 
     for (let i = 0; i < keys.length; i++) {
@@ -557,7 +563,7 @@ export class LifeUniverse {
   /*
    * move a field so that (0,0) is in the middle
    */
-  public static make_center(field_x: Int32Array, field_y: Int32Array, bounds: IBounds): void {
+  public static make_center(field_x: Int32Array, field_y: Int32Array, bounds: ReadWrite<IBounds>): void {
     const offset_x = Math.round((bounds.left - bounds.right) / 2) - bounds.left;
     const offset_y = Math.round((bounds.top - bounds.bottom) / 2) - bounds.top;
 
@@ -604,9 +610,9 @@ export class LifeUniverse {
   private static partition(start: number, end: number, test_field: Int32Array, other_field: Int32Array, offset: number): number {
     // Like quicksort's partition: Seperate the values from start to end by
     // the bitmask in offset in the array test_field, returning the middle
-    var i = start;
-    var j = end;
-    var swap;
+    let i = start;
+    let j = end;
+    let swap: number;
 
     while (i <= j) {
       while (i <= end && (test_field[i] & offset) === 0) {
@@ -670,9 +676,9 @@ export class LifeUniverse {
   };
 
   private level2_setup(start: number, end: number, field_x: Int32Array, field_y: Int32Array): ITreeNode {
-    var set = 0,
-      x,
-      y;
+    let set = 0;
+    let x;
+    let y;
 
     for (let i = start; i <= end; i++) {
       x = field_x[i];
@@ -858,7 +864,7 @@ export class LifeUniverse {
 
   };
 
-  private node_next_generation(node: ITreeNode): ITreeNode {
+  private node_next_generation(node: TreeNode): ITreeNode {
     if (node.cache) {
       return node.cache;
     }
@@ -898,7 +904,7 @@ export class LifeUniverse {
     );
   };
 
-  private node_quick_next_generation(node: ITreeNode): ITreeNode {
+  private node_quick_next_generation(node: TreeNode): ITreeNode {
     if (node.quick_cache !== null) {
       return node.quick_cache;
     }
@@ -930,7 +936,7 @@ export class LifeUniverse {
     );
   };
 
-  private node_hash(node: ITreeNode): void {
+  private node_hash(node: TreeNode): void {
     if (!this.in_hashmap(node)) {
       // Update the id. We have looked for an old id, as
       // the the hashmap has been cleared and ids have been
@@ -957,7 +963,7 @@ export class LifeUniverse {
     }
   };
 
-  private node_get_boundary(node: ITreeNode, left: number, top: number, find_mask: number, boundary: IBounds): void {
+  private node_get_boundary(node: ITreeNode, left: number, top: number, find_mask: number, boundary: ReadWrite<IBounds>): void {
     if (node.population === 0 || !find_mask) {
       return;
     }
@@ -982,10 +988,10 @@ export class LifeUniverse {
         return;
       }
 
-      var find_nw = find_mask,
-        find_sw = find_mask,
-        find_ne = find_mask,
-        find_se = find_mask;
+      let find_nw = find_mask;
+      let find_sw = find_mask;
+      let find_ne = find_mask;
+      let find_se = find_mask;
 
       if (node.nw.population) {
         find_sw &= ~MASK_TOP;
