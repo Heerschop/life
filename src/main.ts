@@ -1,6 +1,4 @@
-// @t s-nocheck
-
-import { LifeUniverse } from './life';
+import { LifeUniverse, ITreeNode } from './life';
 import { LifeCanvasDrawer } from './draw';
 import { formats } from './formats';
 import { load_macrocell } from './macrocell';
@@ -76,9 +74,6 @@ var
     loaded = false,
 
 
-    life = new LifeUniverse(),
-    drawer = new LifeCanvasDrawer(),
-
     // example setups which are run at startup
     // loaded from examples/
     /** @type {Array.<string>} */
@@ -89,7 +84,8 @@ var
       "logt2growth,Log(t)^2 growth|infinitelwsshotel,Infinite LWSS hotel|c5greyship,c/5 greyship"
     ).split("|");
 
-
+  const life = new LifeUniverse();
+  let drawer: LifeCanvasDrawer;
 
   /** @type {function(function())} */
   var nextFrame =
@@ -109,15 +105,17 @@ var
 
     initial_description = document.querySelector<any>("meta[name=description]")!.content;
 
-    if (!drawer.init(document.body)) {
-      set_text($("notice")!.getElementsByTagName("h4")[0],
-        "Canvas-less browsers are not supported. I'm sorry for that.");
+    try {
+      drawer = new LifeCanvasDrawer(document.body, window.innerWidth, document.body.offsetHeight);
+    } catch (error) {
+      set_text($("notice")!.getElementsByTagName("h3")[0], error.message);
+      show_overlay("about");
       return;
     }
 
     init_ui();
 
-    drawer.set_size(window.innerWidth, document.body.offsetHeight);
+    // drawer.set_size(window.innerWidth, document.body.offsetHeight);
     reset_settings();
 
     // This gets called, when a pattern is loaded.
@@ -759,8 +757,8 @@ var
             field_y[i] = Math.random() * height;
           }
 
-          var bounds = life.get_bounds(field_x, field_y);
-          life.make_center(field_x, field_y, bounds);
+          var bounds = LifeUniverse.get_bounds(field_x, field_y);
+          LifeUniverse.make_center(field_x, field_y, bounds);
           life.setup_field(field_x, field_y, bounds);
 
           life.save_rewind_state();
@@ -1063,8 +1061,8 @@ var
       life.clear_pattern();
 
       if (!is_mc) {
-        var bounds = life.get_bounds(result.field_x, result.field_y);
-        life.make_center(result.field_x, result.field_y, bounds);
+        var bounds = LifeUniverse.get_bounds(result.field_x, result.field_y);
+        LifeUniverse.make_center(result.field_x, result.field_y, bounds);
         life.setup_field(result.field_x, result.field_y, bounds);
       }
       else {
@@ -1296,7 +1294,7 @@ var
     }
   }
 
-  function lazy_redraw(node: any) {
+  function lazy_redraw(node: ITreeNode) {
     if (!running || max_fps < 15) {
       drawer.redraw(node);
     }
