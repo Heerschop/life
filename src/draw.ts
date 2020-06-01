@@ -33,11 +33,8 @@ export class LifeCanvasDrawer {
   // given as ratio of cell size
   public border_width = 0;
   public cell_width = 2;
-  public readonly canvas: HTMLCanvasElement;
 
-  constructor(dom_parent: HTMLElement, width: number, height: number) {
-    this.canvas = document.createElement("canvas");
-
+  constructor(public readonly canvas: HTMLCanvasElement, width: number, height: number) {
     const context = this.canvas.getContext("2d");
 
     if (!this.canvas.getContext || !context) {
@@ -45,8 +42,6 @@ export class LifeCanvasDrawer {
     }
 
     this.context = context;
-
-    dom_parent.appendChild(this.canvas);
 
     this.set_size(width, height);
   }

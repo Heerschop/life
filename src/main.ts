@@ -106,7 +106,9 @@ var
     initial_description = document.querySelector<any>("meta[name=description]")!.content;
 
     try {
-      drawer = new LifeCanvasDrawer(document.body, window.innerWidth, document.body.offsetHeight);
+      const canvas = $('life-universe') as HTMLCanvasElement;
+
+      drawer = new LifeCanvasDrawer(canvas, window.innerWidth, document.body.offsetHeight);
     } catch (error) {
       set_text($("notice")!.getElementsByTagName("h3")[0], error.message);
       show_overlay("about");
