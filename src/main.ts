@@ -25,6 +25,9 @@ var
   /** @const */
   DEFAULT_FPS = 20;
 
+const cell_color = '#cccccc';
+const background_color = '#000000';
+
 
 (function () {
   //var console = console || { log : function() {} };
@@ -815,21 +818,21 @@ var
           drawer.border_width = DEFAULT_BORDER;
         }
 
-        //drawer.cell_color = validate_color($("cell_color").value) || "#ccc";
-        //drawer.background_color = validate_color($("background_color").value) || "#000";
+        //cell_color = validate_color($("cell_color").value) || "#ccc";
+        //background_color = validate_color($("background_color").value) || "#000";
         var style_text = document.createTextNode(
-          ".button,.menu>div{background-color:" + drawer.cell_color +
-          ";box-shadow:2px 2px 4px " + drawer.cell_color + "}" +
-          "#statusbar>div{border-color:" + drawer.cell_color + "}"
+          ".button,.menu>div{background-color:" + cell_color +
+          ";box-shadow:2px 2px 4px " + cell_color + "}" +
+          "#statusbar>div{border-color:" + cell_color + "}"
         );
 
         style_element.appendChild(style_text);
 
         ($("pattern_name") as any).style.color =
-          ($("statusbar") as any).style.color = drawer.cell_color;
-        ($("statusbar") as any).style.textShadow = "0px 0px 1px " + drawer.cell_color;
+          ($("statusbar") as any).style.color = cell_color;
+        ($("statusbar") as any).style.textShadow = "0px 0px 1px " + cell_color;
 
-        ($("toolbar") as any).style.color = drawer.background_color;
+        ($("toolbar") as any).style.color = background_color;
 
         lazy_redraw(life.root);
       };
@@ -850,8 +853,8 @@ var
         ($("gen_step") as any).value = Math.pow(2, life.step);
 
         ($("border_width") as any).value = drawer.border_width;
-        //$("cell_color").value = drawer.cell_color;
-        //$("background_color").value = drawer.background_color;
+        //$("cell_color").value = cell_color;
+        //$("background_color").value = background_color;
       };
 
       $("settings_abort")!.onclick =
@@ -1007,9 +1010,6 @@ var
   }
 
   function reset_settings() {
-    drawer.background_color = "#000000";
-    drawer.cell_color = "#cccccc";
-
     drawer.border_width = DEFAULT_BORDER;
     drawer.cell_width = 2;
 
