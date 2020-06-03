@@ -1445,7 +1445,7 @@ var
       window.history.replaceState(null, "", "?pattern=" + filename);
     }
     else {
-      window.history.replaceState(null, "", "/life/");
+      window.history.replaceState(null, "", "");
     }
   }
 
