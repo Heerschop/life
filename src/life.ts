@@ -73,13 +73,15 @@ class TreeNode implements ITreeNode {
   }
 }
 
-class Leaf implements ILeaf {
-  constructor(
-    public readonly id: number,
-    public readonly population: number,
-    public readonly level: number
-  ) {
-  }
+class TrueLeaf implements ILeaf {
+  public readonly id = 2;
+  public readonly population = 1;
+  public readonly level = 0;
+}
+class FalseLeaf implements ILeaf {
+  public readonly id = 3;
+  public readonly population = 0;
+  public readonly level = 0;
 }
 
 export class LifeUniverse {
@@ -98,8 +100,8 @@ export class LifeUniverse {
   private level2_cache: ITreeNode[] = [];
   private _powers = new Float64Array(1024);
   private _bitcounts = new Int8Array(0x758);
-  private false_leaf: ILeaf = new Leaf(3, 0, 0);
-  private true_leaf: ILeaf = new Leaf(2, 1, 0);
+  private false_leaf: ILeaf = new FalseLeaf();
+  private true_leaf: ILeaf = new TrueLeaf();
 
   constructor() {
     this._powers[0] = 1;

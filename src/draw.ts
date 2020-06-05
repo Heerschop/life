@@ -192,19 +192,19 @@ export class LifeCanvasDrawer {
 
   private draw_text(cells: Map<number, IGridCell>) {
     const cellSize = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
+    const threshold = 384;
 
     if (cellSize >= 24) {
-      this.context.fillStyle = '#ffffff';
-      this.context.textAlign = 'center';
       this.context.shadowOffsetX = 1;
       this.context.shadowOffsetY = 1;
       this.context.shadowBlur = 1;
       this.context.shadowColor = 'rgba(0,0,0,1)';
 
-      if (cellSize < 384) {
+      if (cellSize < threshold) {
         let fontSize = cellSize / 1.7;
 
-        this.context.font = fontSize + 'px Consolas';
+        this.context.fillStyle = '#ffffff';
+        this.context.font = fontSize + 'px sans-serif';
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
 
@@ -212,35 +212,44 @@ export class LifeCanvasDrawer {
           this.context.fillText(item.nodes.length.toString(), item.x + cellSize / 2, item.y + cellSize / 2);
         }
       } else {
-        let fontSize = cellSize / 28;
-        let rowSpace = cellSize / 20;
+        const fontSize = cellSize / 28;
+        const rowSpace = cellSize / 20;
+        const rectOffsetX = cellSize / 64;
+        const rectOffsetY = cellSize / 64;
 
-        this.context.font = fontSize + 'px Consolas';
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
         for (const item of cells.values()) {
-          let row = 12;
-          let column = 12;
+          let offsetX = cellSize / 11.5;
+          let offsetY = cellSize / 21;
 
-          this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + column, item.y + row);
+          this.context.font = 'bold ' + fontSize * 1.2 + 'px sans-serif';
+          this.context.fillStyle = '#ffffff';
+          this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + offsetX, item.y + offsetY * 1.2);
 
           for (const node of item.nodes) {
-            row += rowSpace;
-            this.context.fillText('type: ' + node.constructor.name.toString(), item.x + column, item.y + (row += rowSpace));
-            this.context.fillText('id: ' + node.id.toString(), item.x + column, item.y + (row += rowSpace));
-            this.context.fillText('level: ' + node.level.toString(), item.x + column, item.y + (row += rowSpace));
-            this.context.fillText('population: ' + node.population.toString(), item.x + column, item.y + (row += rowSpace));
+            offsetY += rowSpace;
 
-            if (row > (cellSize / 1.5)) {
-              row = 12;
-              column += cellSize / 2.5;
+            this.context.fillStyle = 'rgba(255,255,255,0.4)';
+            this.context.fillRect(item.x + offsetX - rectOffsetX, item.y + offsetY + rectOffsetY, cellSize / 2.5, cellSize / 4.5);
+
+            this.context.fillStyle = '#ffffff';
+            this.context.font = 'bold ' + fontSize + 'px sans-serif';
+            this.context.fillText(node.constructor.name.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+            this.context.font = fontSize + 'px sans-serif';
+            this.context.fillText('id: ' + node.id.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+            this.context.fillText('level: ' + node.level.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+            this.context.fillText('population: ' + node.population.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+
+            offsetY += rowSpace / 2;
+
+            if (offsetY > (cellSize / 1.5)) {
+              offsetY = cellSize / 21;
+              offsetX += cellSize / 2.2;
             }
           }
-
-
         }
-
       }
     }
   }
