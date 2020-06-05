@@ -12,6 +12,8 @@ Conway's Game of Life implementation for your browser in TypeScript based on the
 npm install
 npm start # And select serve
 ```
+### Open web size
+http://localhost:3000
 
 ### Resources
 * [The original Fabian copy online version](https://copy.sh/life/)

@@ -27,6 +27,6 @@
     "rollup": "^2.12.0",
     "script-launcher": "^1.29.0",
     "tslib": "^2.0.0",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.5"
   }
 }

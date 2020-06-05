@@ -1,9 +1,10 @@
 import { ITreeNode, IBounds, IPoint } from "./life";
 
-interface IColor {
-  readonly r: number;
-  readonly g: number;
-  readonly b: number;
+interface IGridCell {
+  x: number,
+  y: number,
+  type: 'Dead leaf' | 'Live leaf' | 'Node' | '',
+  nodes: ITreeNode[]
 }
 
 export class LifeCanvasDrawer {
@@ -23,21 +24,17 @@ export class LifeCanvasDrawer {
 
   // in pixels
   private _border_width = 0;
-  private cell_color_rgb: IColor = LifeCanvasDrawer.color2rgb('#cccccc');
 
   private pixel_ratio = 1;
 
-  public cell_color = '#cccccc';
-  public background_color = '#000000';
+  private cell_color = 0xffcccccc; //Alpha Blue Green Red (ABGR)
+  private background_color = 0xff000000; //Alpha Blue Green Red (ABGR)
 
   // given as ratio of cell size
   public border_width = 0;
   public cell_width = 2;
-  public readonly canvas: HTMLCanvasElement;
 
-  constructor(dom_parent: HTMLElement, width: number, height: number) {
-    this.canvas = document.createElement("canvas");
-
+  constructor(public readonly canvas: HTMLCanvasElement, width: number, height: number) {
     const context = this.canvas.getContext("2d");
 
     if (!this.canvas.getContext || !context) {
@@ -45,8 +42,6 @@ export class LifeCanvasDrawer {
     }
 
     this.context = context;
-
-    dom_parent.appendChild(this.canvas);
 
     this.set_size(width, height);
   }
@@ -78,6 +73,22 @@ export class LifeCanvasDrawer {
     }
   }
 
+  public static getIntensityColor(intensity: number): number {
+    intensity += 100;
+
+    if (intensity < 100) intensity = 100;
+
+    let r = Math.round(intensity / 2);
+    let g = Math.round(intensity / 4);
+    let b = Math.round(intensity / 6);
+
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
+
+    return r | g << 8 | b << 16 | 0xFF << 24;
+  }
+
   private draw_node(node: ITreeNode, size: number, left: number, top: number): void {
     if (node.population === 0) {
       return;
@@ -95,12 +106,12 @@ export class LifeCanvasDrawer {
 
     if (size <= 1) {
       if (node.population) {
-        this.fill_square(left + this.canvas_offset_x | 0, top + this.canvas_offset_y | 0, 1);
+        this.fill_square(left + this.canvas_offset_x | 0, top + this.canvas_offset_y | 0, 1, this.cell_color);
       }
     }
     else if (node.level === 0) {
       if (node.population) {
-        this.fill_square(left + this.canvas_offset_x, top + this.canvas_offset_y, this.cell_width);
+        this.fill_square(left + this.canvas_offset_x, top + this.canvas_offset_y, this.cell_width, this.cell_color);
       }
     }
     else {
@@ -113,7 +124,7 @@ export class LifeCanvasDrawer {
     }
   }
 
-  private fill_square(x: number, y: number, size: number): void {
+  private fill_square(x: number, y: number, size: number, color: number): void {
     let width = size - this._border_width;
     let height = width;
 
@@ -143,7 +154,6 @@ export class LifeCanvasDrawer {
     let row_width = this.canvas_width - width;
 
     //console.assert(x >= 0 && y >= 0 && x + width <= canvas_width && y + height <= canvas_height);
-    const color = this.cell_color_rgb.r | this.cell_color_rgb.g << 8 | this.cell_color_rgb.b << 16 | 0xFF << 24;
 
     for (let i = 0; i < height; i++) {
       for (let j = 0; j < width; j++) {
@@ -155,24 +165,128 @@ export class LifeCanvasDrawer {
     }
   }
 
-  public redraw(node: ITreeNode): void {
-    const bg_color_rgb = LifeCanvasDrawer.color2rgb(this.background_color);
-    const bg_color_int = bg_color_rgb.r | bg_color_rgb.g << 8 | bg_color_rgb.b << 16 | 0xFF << 24;
-
+  public redraw(node: ITreeNode, debug: boolean): void {
     this._border_width = this.border_width * this.cell_width | 0;
-    this.cell_color_rgb = LifeCanvasDrawer.color2rgb(this.cell_color);
-
-    const count = this.canvas_width * this.canvas_height;
-
-    for (let i = 0; i < count; i++) {
-      this.image_data_data[i] = bg_color_int;
-    }
 
     const size = Math.pow(2, node.level - 1) * this.cell_width;
 
-    this.draw_node(node, 2 * size, -size, -size);
+    if (debug) {
+      this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
 
-    this.context.putImageData(this.image_data, 0, 0);
+      const cells = this.draw_cells(node, 2 * size, -size, -size);
+
+      this.draw_text(cells);
+
+    } else {
+      const count = this.canvas_width * this.canvas_height;
+
+      for (let i = 0; i < count; i++) {
+        this.image_data_data[i] = this.background_color;
+      }
+
+      this.draw_node(node, 2 * size, -size, -size);
+
+      this.context.putImageData(this.image_data, 0, 0);
+    }
+  }
+
+  private draw_text(cells: Map<number, IGridCell>) {
+    const cellSize = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
+
+    if (cellSize >= 24) {
+      this.context.fillStyle = '#ffffff';
+      this.context.textAlign = 'center';
+      this.context.shadowOffsetX = 1;
+      this.context.shadowOffsetY = 1;
+      this.context.shadowBlur = 1;
+      this.context.shadowColor = 'rgba(0,0,0,1)';
+
+      if (cellSize < 384) {
+        let fontSize = cellSize / 1.7;
+
+        this.context.font = fontSize + 'px Consolas';
+        this.context.textAlign = 'center';
+        this.context.textBaseline = 'middle';
+
+        for (const item of cells.values()) {
+          this.context.fillText(item.nodes.length.toString(), item.x + cellSize / 2, item.y + cellSize / 2);
+        }
+      } else {
+        let fontSize = cellSize / 28;
+        let rowSpace = cellSize / 20;
+
+        this.context.font = fontSize + 'px Consolas';
+        this.context.textAlign = 'left';
+        this.context.textBaseline = 'middle';
+
+        for (const item of cells.values()) {
+          let row = item.y + 12;
+          let column = 12;
+
+          this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + column, row);
+
+          for (const node of item.nodes) {
+            row += rowSpace;
+            this.context.fillText('type: ' + node.constructor.name.toString(), item.x + column, row += rowSpace);
+            this.context.fillText('id: ' + node.id.toString(), item.x + column, row += rowSpace);
+            this.context.fillText('level: ' + node.level.toString(), item.x + column, row += rowSpace);
+            this.context.fillText('population: ' + node.population.toString(), item.x + column, row += rowSpace);
+          }
+
+
+        }
+
+      }
+    }
+  }
+
+  private draw_cells(node: ITreeNode, size: number, left: number, top: number, cells = new Map<number, IGridCell>()): Map<number, IGridCell> {
+    if (node) {
+      let cellSize = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
+
+      const x = left + this.canvas_offset_x | 0;
+      const y = top + this.canvas_offset_y | 0;
+      const pointer = x + y * this.canvas_width;
+
+      let cell = cells.get(pointer);
+
+      if (cell === undefined) {
+        cell = { x: x, y: y, type: '', nodes: [] };
+        cells.set(pointer, cell)
+      }
+
+      cell.nodes.push(node);
+
+      size /= 2;
+
+      this.draw_cells(node.nw, size, left, top, cells);
+      this.draw_cells(node.ne, size, left + size, top, cells);
+      this.draw_cells(node.sw, size, left, top + size, cells);
+      this.draw_cells(node.se, size, left + size, top + size, cells);
+
+      if (cell.type === 'Live leaf') return cells;
+      if (cell.type === 'Node') return cells;
+
+      cell.type = 'Node';
+
+      let color = '#000070';
+
+      if (node.id === 3) {
+        cell.type = 'Dead leaf';
+        color = '#700000';  // false leaf
+      }
+      if (node.id === 2) {
+        cell.type = 'Live leaf';
+        color = '#cccccc';  // true  leaf
+      }
+
+      if (x + cellSize < 0 || y + cellSize < 0 || x >= this.canvas_width || y >= this.canvas_height) return cells;
+
+      this.context.fillStyle = color;
+      this.context.fillRect(x, y, cellSize, cellSize);
+    }
+
+    return cells;
   }
 
   /**
@@ -282,16 +396,23 @@ export class LifeCanvasDrawer {
     this.canvas_offset_y = y;
   }
 
+  private static RGBAtoColor(rgba: number): string {
+    return '#' +
+      ((rgba >> 0x00) & 0xFF).toString(16).padStart(2, '0') +
+      ((rgba >> 0x08) & 0xFF).toString(16).padStart(2, '0') +
+      ((rgba >> 0x10) & 0xFF).toString(16).padStart(2, '0');
+  }
+
   public draw_cell(x: number, y: number, set: boolean): void {
     let cell_x = x * this.cell_width + this.canvas_offset_x;
     let cell_y = y * this.cell_width + this.canvas_offset_y;
     let width = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
 
     if (set) {
-      this.context.fillStyle = this.cell_color;
+      this.context.fillStyle = LifeCanvasDrawer.RGBAtoColor(this.cell_color);
     }
     else {
-      this.context.fillStyle = this.background_color;
+      this.context.fillStyle = LifeCanvasDrawer.RGBAtoColor(this.background_color);
     }
 
     this.context.fillRect(cell_x, cell_y, width, width);
@@ -301,23 +422,6 @@ export class LifeCanvasDrawer {
     return {
       x: Math.floor((x * this.pixel_ratio - this.canvas_offset_x + this.border_width / 2) / this.cell_width),
       y: Math.floor((y * this.pixel_ratio - this.canvas_offset_y + this.border_width / 2) / this.cell_width)
-    };
-  }
-
-  // #321 or #332211 to { r: 0x33, b: 0x22, g: 0x11 }
-  private static color2rgb(color: string): IColor {
-    if (color.length === 4) {
-      return {
-        r: parseInt(color[1] + color[1], 16),
-        g: parseInt(color[2] + color[2], 16),
-        b: parseInt(color[3] + color[3], 16)
-      };
-    }
-
-    return {
-      r: parseInt(color.slice(1, 3), 16),
-      g: parseInt(color.slice(3, 5), 16),
-      b: parseInt(color.slice(5, 7), 16)
     };
   }
 }
