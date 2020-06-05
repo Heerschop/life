@@ -1,5 +1,19 @@
 import { ITreeNode, IBounds, IPoint } from "./life";
 
+export interface IGridNode {
+  x: number,
+  y: number,
+  node: ITreeNode,
+}
+
+export interface IGridNodes {
+  root: ITreeNode;
+  id: Set<number>;
+  level: Set<number>;
+  population: Set<number>;
+  size: Set<number>;
+  nodes: IGridNode[];
+}
 export class LifeCanvasDrawer {
 
   // where is the viewport in pixels, from 0,0
@@ -82,19 +96,81 @@ export class LifeCanvasDrawer {
     return r | g << 8 | b << 16 | 0xFF << 24;
   }
 
+  public drawNodeGrid(nodes: IGridNode[]): void {
+    const hash: Map<number, { x: number, y: number, count: number }> = new Map<number, { x: number, y: number, count: number }>();
+    let width = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
+
+    for (const node of nodes) {
+      let color = '#000070';
+      const x = node.x + this.canvas_offset_x | 0;
+      const y = node.y + this.canvas_offset_y | 0;
+      const pointer = x + y * this.canvas_width;
+
+      const value = hash.get(pointer) || { x: x, y: y, count: 0 };
+      value.count++;
+      hash.set(pointer, value)
+
+      if (node.node.id === 3) {
+        if (node.node.id === 3) color = '#700000';  // false leaf
+        // if (node.node.id === 2) color = '#cccccc';  // true  leaf
+
+        this.context.fillStyle = color;
+        this.context.fillRect(x, y, width, width);
+      }
+    }
+
+    for (const node of nodes) {
+      let color = '#000070';
+
+      if (node.node.id > 3) {
+        const x = node.x + this.canvas_offset_x | 0;
+        const y = node.y + this.canvas_offset_y | 0;
+        const pointer = x + y * this.canvas_width;
+
+        this.context.fillStyle = color;
+        this.context.fillRect(x, y, width, width);
+      }
+    }
+
+    for (const node of nodes) {
+      let color = '#000070';
+      const x = node.x + this.canvas_offset_x | 0;
+      const y = node.y + this.canvas_offset_y | 0;
+      const pointer = x + y * this.canvas_width;
+
+      // const value = (hash.get(pointer) || 0) + 1;
+      // hash.set(pointer, value)
+
+      if (node.node.id === 2) {
+        // if (node.node.id === 3) color = '#700000';  // false leaf
+        if (node.node.id === 2) color = '#cccccc';  // true  leaf
+
+        this.context.fillStyle = color;
+        this.context.fillRect(x, y, width, width);
+      }
+    }
+
+    if (width >= 24) {
+      let fontSize = width / 1.7;
+
+      this.context.font = fontSize + 'px Georgia';
+      this.context.fillStyle = '#ffffff';
+      this.context.textAlign = 'center';
+      this.context.shadowOffsetX = 1;
+      this.context.shadowOffsetY = 1;
+      this.context.shadowBlur = 1;
+      this.context.shadowColor = 'rgba(0,0,0,1)';
+      this.context.textAlign = 'center';
+      this.context.textBaseline = 'middle';
+
+      for (const item of hash.values()) {
+        this.context.fillText(item.count.toString(), item.x + width / 2, item.y + width / 2, 100);
+      }
+    }
+  }
+
 
   private draw_node(node: ITreeNode, size: number, left: number, top: number): void {
-
-    // if (node.id === 3) {
-    //   this.fill_square(left + this.canvas_offset_x | 0, top + this.canvas_offset_y | 0, this.cell_width, 0xff000080);
-    // } else if (node.id === 2) {
-    //   this.fill_square(left + this.canvas_offset_x | 0, top + this.canvas_offset_y | 0, this.cell_width, this.cell_color);
-    // } else {
-    //   this.fill_square(left + this.canvas_offset_x | 0, top + this.canvas_offset_y | 0, this.cell_width, 0xff800000);
-    // }
-
-    // console.log(node.population);
-
     if (node.population === 0) {
       return;
     }
@@ -170,20 +246,71 @@ export class LifeCanvasDrawer {
     }
   }
 
-  public redraw(node: ITreeNode): void {
+  public redraw(node: ITreeNode, debug: boolean): void {
     this._border_width = this.border_width * this.cell_width | 0;
 
-    const count = this.canvas_width * this.canvas_height;
+    if (debug) {
+      const gridNodes = this.getGridNodes(node);
 
-    for (let i = 0; i < count; i++) {
-      this.image_data_data[i] = this.background_color;
+      this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
+
+      this.drawNodeGrid(gridNodes.nodes);
+
+    } else {
+      const count = this.canvas_width * this.canvas_height;
+
+      for (let i = 0; i < count; i++) {
+        this.image_data_data[i] = this.background_color;
+      }
+
+      const size = Math.pow(2, node.level - 1) * this.cell_width;
+
+      this.draw_node(node, 2 * size, -size, -size);
+
+      this.context.putImageData(this.image_data, 0, 0);
     }
+  }
+
+  private getGridNodes(node: ITreeNode): IGridNodes {
+    const gridNodes: IGridNodes = {
+      root: node,
+      id: new Set<number>(),
+      level: new Set<number>(),
+      population: new Set<number>(),
+      size: new Set<number>(),
+      nodes: []
+    };
 
     const size = Math.pow(2, node.level - 1) * this.cell_width;
+    const left = -size;
+    const top = -size;
 
-    this.draw_node(node, 2 * size, -size, -size);
+    return LifeCanvasDrawer.traverseGridNodes(node, gridNodes, size * 2, left, top);
+  }
 
-    this.context.putImageData(this.image_data, 0, 0);
+  private static traverseGridNodes(node: ITreeNode, gridNodes: IGridNodes, size: number, left: number, top: number): IGridNodes {
+    if (node) {
+      gridNodes.id.add(node.id);
+      gridNodes.level.add(node.level);
+      gridNodes.population.add(node.population);
+      gridNodes.size.add(size);
+      gridNodes.nodes.push(
+        {
+          x: left,
+          y: top,
+          node: node
+        }
+      );
+
+      size /= 2;
+
+      LifeCanvasDrawer.traverseGridNodes(node.nw, gridNodes, size, left, top);
+      LifeCanvasDrawer.traverseGridNodes(node.ne, gridNodes, size, left + size, top);
+      LifeCanvasDrawer.traverseGridNodes(node.sw, gridNodes, size, left, top + size);
+      LifeCanvasDrawer.traverseGridNodes(node.se, gridNodes, size, left + size, top + size);
+    }
+
+    return gridNodes;
   }
 
   /**

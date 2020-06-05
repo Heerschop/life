@@ -175,7 +175,7 @@ input[type="text"] {
 a,
 .link {
   color: #ff0;
-  padding: 0px 1px;
+  padding: 0px 1px 0px 20px;
   cursor: pointer;
   text-decoration: none;
 }

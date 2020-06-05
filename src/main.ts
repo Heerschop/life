@@ -89,6 +89,7 @@ const background_color = '#000000';
 
   const life = new LifeUniverse();
   let drawer: LifeCanvasDrawer;
+  let debugMode = false;
 
   /** @type {function(function())} */
   var nextFrame =
@@ -363,7 +364,7 @@ const background_color = '#000000';
           update_hud();
 
           drawer.center_view();
-          drawer.redraw(life.root);
+          drawer.redraw(life.root, debugMode);
         });
       };
 
@@ -373,7 +374,7 @@ const background_color = '#000000';
             life.restore_rewind_state();
 
             fit_pattern();
-            drawer.redraw(life.root);
+            drawer.redraw(life.root, debugMode);
 
             update_hud();
           });
@@ -528,13 +529,13 @@ const background_color = '#000000';
 
       drawer.canvas.addEventListener("DOMMouseScroll", (drawer.canvas as any).onmousewheel, false);
 
-      window.onkeydown = function (e: any) {
+      window.onkeydown = function (e: KeyboardEvent) {
         var chr = e.which,
           do_redraw = false,
-          target = e.target.nodeName;
+          target = (e.target as HTMLElement).nodeName;
 
-        //console.log(e.target)
-        //console.log(chr + " " + e.charCode + " " + e.keyCode);
+        // console.log(e.target)
+        // console.log(chr + " " + e.charCode + " " + e.keyCode);
 
         if (target === "INPUT" || target === "TEXTAREA") {
           return true;
@@ -542,6 +543,12 @@ const background_color = '#000000';
 
         if (e.ctrlKey || e.shiftKey || e.altKey) {
           return true;
+        }
+
+        if (chr === 68) {
+          debugMode = !debugMode;
+
+          lazy_redraw(life.root);
         }
 
         if (chr === 37 || chr === 72) {
@@ -1086,7 +1093,7 @@ const background_color = '#000000';
       hide_overlay();
 
       fit_pattern();
-      drawer.redraw(life.root);
+      drawer.redraw(life.root, debugMode);
 
       update_hud();
       set_text($("pattern_name"), result.title || "no name");
@@ -1176,7 +1183,7 @@ const background_color = '#000000';
 
       if (per_frame * n < (time - start)) {
         life.next_generation(true);
-        drawer.redraw(life.root);
+        drawer.redraw(life.root, debugMode);
 
         n++;
 
@@ -1203,7 +1210,8 @@ const background_color = '#000000';
     }
 
     life.next_generation(is_single);
-    drawer.redraw(life.root);
+
+    drawer.redraw(life.root, debugMode);
 
     update_hud(1000 / (Date.now() - time));
 
@@ -1298,7 +1306,7 @@ const background_color = '#000000';
 
   function lazy_redraw(node: ITreeNode) {
     if (!running || max_fps < 15) {
-      drawer.redraw(node);
+      drawer.redraw(node, debugMode);
     }
   }
 
@@ -1429,6 +1437,8 @@ const background_color = '#000000';
       drawer.draw_cell(coords.x, coords.y, mouse_set);
       last_mouse_x = coords.x;
       last_mouse_y = coords.y;
+
+      if (debugMode) drawer.redraw(life.root, debugMode);
     }
   }
 
