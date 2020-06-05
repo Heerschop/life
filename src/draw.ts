@@ -220,17 +220,22 @@ export class LifeCanvasDrawer {
         this.context.textBaseline = 'middle';
 
         for (const item of cells.values()) {
-          let row = item.y + 12;
+          let row = 12;
           let column = 12;
 
-          this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + column, row);
+          this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + column, item.y + row);
 
           for (const node of item.nodes) {
             row += rowSpace;
-            this.context.fillText('type: ' + node.constructor.name.toString(), item.x + column, row += rowSpace);
-            this.context.fillText('id: ' + node.id.toString(), item.x + column, row += rowSpace);
-            this.context.fillText('level: ' + node.level.toString(), item.x + column, row += rowSpace);
-            this.context.fillText('population: ' + node.population.toString(), item.x + column, row += rowSpace);
+            this.context.fillText('type: ' + node.constructor.name.toString(), item.x + column, item.y + (row += rowSpace));
+            this.context.fillText('id: ' + node.id.toString(), item.x + column, item.y + (row += rowSpace));
+            this.context.fillText('level: ' + node.level.toString(), item.x + column, item.y + (row += rowSpace));
+            this.context.fillText('population: ' + node.population.toString(), item.x + column, item.y + (row += rowSpace));
+
+            if (row > (cellSize / 1.5)) {
+              row = 12;
+              column += cellSize / 2.5;
+            }
           }
 
 
