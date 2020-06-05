@@ -192,7 +192,8 @@ export class LifeCanvasDrawer {
 
   private draw_text(cells: Map<number, IGridCell>) {
     const cellSize = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
-    const threshold = 384;
+
+    this.context.textBaseline = 'middle';
 
     if (cellSize >= 24) {
       this.context.shadowOffsetX = 1;
@@ -200,54 +201,78 @@ export class LifeCanvasDrawer {
       this.context.shadowBlur = 1;
       this.context.shadowColor = 'rgba(0,0,0,1)';
 
-      if (cellSize < threshold) {
+      if (cellSize >= 24 && cellSize < 96) {
         let fontSize = cellSize / 1.7;
 
         this.context.fillStyle = '#ffffff';
         this.context.font = fontSize + 'px sans-serif';
         this.context.textAlign = 'center';
-        this.context.textBaseline = 'middle';
 
         for (const item of cells.values()) {
           this.context.fillText(item.nodes.length.toString(), item.x + cellSize / 2, item.y + cellSize / 2);
         }
-      } else {
-        const fontSize = cellSize / 28;
-        const rowSpace = cellSize / 20;
-        const rectOffsetX = cellSize / 64;
-        const rectOffsetY = cellSize / 64;
+      }
+    }
 
-        this.context.textAlign = 'left';
-        this.context.textBaseline = 'middle';
+    console.log('cellSize:', cellSize);
 
-        for (const item of cells.values()) {
-          let offsetX = cellSize / 11.5;
-          let offsetY = cellSize / 21;
+    if (cellSize >= 96 && cellSize < 384) {
+      const fontSize = cellSize / 8;
 
-          this.context.font = 'bold ' + fontSize * 1.2 + 'px sans-serif';
+      this.context.fillStyle = '#ffffff';
+      this.context.textAlign = 'center';
+
+      for (const item of cells.values()) {
+        this.context.font = 'bold ' + fontSize * 1.1 + 'px sans-serif';
+        this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + cellSize / 2, item.y + cellSize / 7);
+
+        let population: number[] = [];
+
+        for (const node of item.nodes) {
+          population.push(node.population);
+        }
+
+        this.context.font = fontSize + 'px sans-serif';
+        this.context.fillText(population.join('-'), item.x + cellSize / 2, item.y + cellSize / 2);
+      }
+    }
+
+
+    if (cellSize >= 384) {
+      const fontSize = cellSize / 28;
+      const rowSpace = cellSize / 20;
+      const rectOffsetX = cellSize / 64;
+      const rectOffsetY = cellSize / 64;
+
+      this.context.textAlign = 'left';
+
+      for (const item of cells.values()) {
+        let offsetX = cellSize / 11.5;
+        let offsetY = cellSize / 21;
+
+        this.context.font = 'bold ' + fontSize * 1.2 + 'px sans-serif';
+        this.context.fillStyle = '#ffffff';
+        this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + offsetX, item.y + offsetY * 1.2);
+
+        for (const node of item.nodes) {
+          offsetY += rowSpace;
+
+          this.context.fillStyle = 'rgba(255,255,255,0.4)';
+          this.context.fillRect(item.x + offsetX - rectOffsetX, item.y + offsetY + rectOffsetY, cellSize / 3.95, cellSize / 4.5);
+
           this.context.fillStyle = '#ffffff';
-          this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + offsetX, item.y + offsetY * 1.2);
+          this.context.font = 'bold ' + fontSize + 'px sans-serif';
+          this.context.fillText(node.constructor.name.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+          this.context.font = fontSize + 'px sans-serif';
+          this.context.fillText('id: ' + node.id.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+          this.context.fillText('level: ' + node.level.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+          this.context.fillText('population: ' + node.population.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
 
-          for (const node of item.nodes) {
-            offsetY += rowSpace;
+          offsetY += rowSpace / 2;
 
-            this.context.fillStyle = 'rgba(255,255,255,0.4)';
-            this.context.fillRect(item.x + offsetX - rectOffsetX, item.y + offsetY + rectOffsetY, cellSize / 2.5, cellSize / 4.5);
-
-            this.context.fillStyle = '#ffffff';
-            this.context.font = 'bold ' + fontSize + 'px sans-serif';
-            this.context.fillText(node.constructor.name.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
-            this.context.font = fontSize + 'px sans-serif';
-            this.context.fillText('id: ' + node.id.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
-            this.context.fillText('level: ' + node.level.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
-            this.context.fillText('population: ' + node.population.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
-
-            offsetY += rowSpace / 2;
-
-            if (offsetY > (cellSize / 1.5)) {
-              offsetY = cellSize / 21;
-              offsetX += cellSize / 2.2;
-            }
+          if (offsetY > (cellSize / 1.5)) {
+            offsetY = cellSize / 21;
+            offsetX += cellSize / 3.3;
           }
         }
       }
