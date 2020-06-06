@@ -1,10 +1,17 @@
 import { ITreeNode, IBounds, IPoint } from "./life";
 
+interface IRelations {
+  nw: IPoint | null;
+  ne: IPoint | null;
+  sw: IPoint | null;
+  se: IPoint | null;
+}
+
 interface IGridCell {
-  x: number,
-  y: number,
-  type: 'Dead leaf' | 'Live leaf' | 'Node' | '',
-  nodes: ITreeNode[]
+  left: number;
+  top: number;
+  live: boolean;
+  nodes: Array<ITreeNode & { relations: IRelations, size: number }>;
 }
 
 export class LifeCanvasDrawer {
@@ -208,13 +215,14 @@ export class LifeCanvasDrawer {
         this.context.font = fontSize + 'px sans-serif';
         this.context.textAlign = 'center';
 
-        for (const item of cells.values()) {
-          this.context.fillText(item.nodes.length.toString(), item.x + cellSize / 2, item.y + cellSize / 2);
+        for (const cell of cells.values()) {
+          const x = cell.left + this.canvas_offset_x | 0;
+          const y = cell.top + this.canvas_offset_y | 0;
+
+          this.context.fillText(cell.nodes.length.toString(), x + cellSize / 2, y + cellSize / 2);
         }
       }
     }
-
-    console.log('cellSize:', cellSize);
 
     if (cellSize >= 96 && cellSize < 384) {
       const fontSize = cellSize / 8;
@@ -222,57 +230,111 @@ export class LifeCanvasDrawer {
       this.context.fillStyle = '#ffffff';
       this.context.textAlign = 'center';
 
-      for (const item of cells.values()) {
+      for (const cell of cells.values()) {
+        const x = cell.left + this.canvas_offset_x | 0;
+        const y = cell.top + this.canvas_offset_y | 0;
+
         this.context.font = 'bold ' + fontSize * 1.1 + 'px sans-serif';
-        this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + cellSize / 2, item.y + cellSize / 7);
+        this.context.fillText('Nodes: ' + cell.nodes.length.toString(), x + cellSize / 2, y + cellSize / 7);
 
         let population: number[] = [];
 
-        for (const node of item.nodes) {
+        for (const node of cell.nodes) {
           population.push(node.population);
         }
 
         this.context.font = fontSize + 'px sans-serif';
-        this.context.fillText(population.join('-'), item.x + cellSize / 2, item.y + cellSize / 2);
+        this.context.fillText(population.join('-'), x + cellSize / 2, y + cellSize / 2);
       }
     }
 
-
     if (cellSize >= 384) {
-      const fontSize = cellSize / 28;
-      const rowSpace = cellSize / 20;
+      const fontSize = cellSize / 29;
+      const rowSpace = cellSize / 24;
       const rectOffsetX = cellSize / 64;
       const rectOffsetY = cellSize / 64;
 
       this.context.textAlign = 'left';
 
-      for (const item of cells.values()) {
+      for (const cell of cells.values()) {
+        const x = cell.left + this.canvas_offset_x | 0;
+        const y = cell.top + this.canvas_offset_y | 0;
+
         let offsetX = cellSize / 11.5;
         let offsetY = cellSize / 21;
 
-        this.context.font = 'bold ' + fontSize * 1.2 + 'px sans-serif';
+        this.context.font = 'bold ' + fontSize * 1.3 + 'px sans-serif';
         this.context.fillStyle = '#ffffff';
-        this.context.fillText('Nodes: ' + item.nodes.length.toString(), item.x + offsetX, item.y + offsetY * 1.2);
+        this.context.fillText('Nodes: ' + cell.nodes.length.toString(), x + offsetX, y + offsetY * 1.2);
 
-        for (const node of item.nodes) {
+        this.context.textAlign = 'right';
+        this.context.fillText(cell.left + ' , ' + cell.top, x + cellSize * 0.95, y + offsetY * 1.2);
+        this.context.textAlign = 'left';
+
+        for (const node of cell.nodes) {
           offsetY += rowSpace;
 
+          const rectX = x + offsetX - rectOffsetX;
+          const rectY = y + offsetY + rectOffsetY;
+          const rectW = cellSize / 3.95;
+          const rectH = cellSize / 4.5;
+
+
           this.context.fillStyle = 'rgba(255,255,255,0.4)';
-          this.context.fillRect(item.x + offsetX - rectOffsetX, item.y + offsetY + rectOffsetY, cellSize / 3.95, cellSize / 4.5);
+          this.context.fillRect(rectX, rectY, rectW, rectH);
 
           this.context.fillStyle = '#ffffff';
           this.context.font = 'bold ' + fontSize + 'px sans-serif';
-          this.context.fillText(node.constructor.name.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+          this.context.fillText(node.constructor.name.toString(), x + offsetX, y + (offsetY += rowSpace));
+          this.context.textAlign = 'right';
+          this.context.fillText(node.objectId.toString(), rectX + rectW * 0.95, y + offsetY);
+
+          this.context.textAlign = 'left';
           this.context.font = fontSize + 'px sans-serif';
-          this.context.fillText('id: ' + node.id.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
-          this.context.fillText('level: ' + node.level.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
-          this.context.fillText('population: ' + node.population.toString(), item.x + offsetX, item.y + (offsetY += rowSpace));
+          this.context.fillText('id: ' + node.id.toString(), x + offsetX, y + (offsetY += rowSpace));
+          this.context.fillText('level: ' + node.level.toString(), x + offsetX, y + (offsetY += rowSpace));
+          this.context.fillText('population: ' + node.population.toString(), x + offsetX, y + (offsetY += rowSpace));
+          this.context.fillText('size: ' + node.size.toString(), x + offsetX, y + (offsetY += rowSpace));
+          // this.context.fillText('left: ' + node.left.toString(), x + offsetX, y + (offsetY += rowSpace));
+          // this.context.fillText('top: ' + node.top.toString(), x + offsetX, y + (offsetY += rowSpace));
 
           offsetY += rowSpace / 2;
 
           if (offsetY > (cellSize / 1.5)) {
             offsetY = cellSize / 21;
             offsetX += cellSize / 3.3;
+          }
+
+          if (cell.left === 0 && cell.top === 0) {
+            this.context.strokeStyle = '#ffffff';
+
+            if (node.relations.ne) {
+              this.context.beginPath();
+              this.context.moveTo(rectX + rectW, rectY);
+              this.context.lineTo(node.relations.ne.x + cellSize / 2, node.relations.ne.y + cellSize / 2);
+              this.context.stroke();
+            }
+
+            if (node.relations.nw) {
+              this.context.beginPath();
+              this.context.moveTo(rectX, rectY);
+              this.context.lineTo(node.relations.nw.x + cellSize / 2, node.relations.nw.y + cellSize / 2);
+              this.context.stroke();
+            }
+
+            if (node.relations.se) {
+              this.context.beginPath();
+              this.context.moveTo(rectX + rectW, rectY + rectH);
+              this.context.lineTo(node.relations.se.x + cellSize / 2, node.relations.se.y + cellSize / 2);
+              this.context.stroke();
+            }
+
+            if (node.relations.sw) {
+              this.context.beginPath();
+              this.context.moveTo(rectX, rectY + rectH);
+              this.context.lineTo(node.relations.sw.x + cellSize / 2, node.relations.sw.y + cellSize / 2);
+              this.context.stroke();
+            }
           }
         }
       }
@@ -290,32 +352,45 @@ export class LifeCanvasDrawer {
       let cell = cells.get(pointer);
 
       if (cell === undefined) {
-        cell = { x: x, y: y, type: '', nodes: [] };
+        cell = { left: left, top: top, live: false, nodes: [] };
         cells.set(pointer, cell)
       }
 
-      cell.nodes.push(node);
+      const relations: IRelations = {
+        nw: null,
+        ne: null,
+        sw: null,
+        se: null,
+      }
 
       size /= 2;
+
+      cell.nodes.push({
+        ...node,
+        relations: relations,
+        size: size
+      });
+
+      if (node.nw) relations.nw = { x: x, y: y };
+      if (node.ne) relations.ne = { x: x + size, y: y };
+      if (node.sw) relations.sw = { x: x, y: y + size };
+      if (node.se) relations.se = { x: x + size, y: y + size };
 
       this.draw_cells(node.nw, size, left, top, cells);
       this.draw_cells(node.ne, size, left + size, top, cells);
       this.draw_cells(node.sw, size, left, top + size, cells);
       this.draw_cells(node.se, size, left + size, top + size, cells);
 
-      if (cell.type === 'Live leaf') return cells;
-      if (cell.type === 'Node') return cells;
-
-      cell.type = 'Node';
+      if (cell.live) return cells;
 
       let color = '#000070';
 
       if (node.id === 3) {
-        cell.type = 'Dead leaf';
         color = '#700000';  // false leaf
       }
+
       if (node.id === 2) {
-        cell.type = 'Live leaf';
+        cell.live = true;
         color = '#cccccc';  // true  leaf
       }
 
