@@ -1,11 +1,23 @@
 import { ITreeNode, IBounds, IPoint } from "./life";
 
+interface INodeProperties {
+  cellBorder: number;
+  cellSize: number;
+  canvasX: number;
+  canvasY: number;
+  fontSize: number;
+  nodeOffsetTop: number;
+  nodeWidth: number;
+  nodeHeight: number;
+  nodeHorzBorder: number;
+  nodeVertBorder: number;
+}
 interface INodeInfo {
   node: ITreeNode;
   size: number;
 }
 
-interface IGridCell {
+export interface IGridCell {
   left: number;
   top: number;
   nodes: Array<INodeInfo>;
@@ -36,6 +48,89 @@ class RootNode implements ITreeNode {
     this.sw = node.sw;
     this.se = node.se;
     this.id = node.id;
+  }
+}
+
+class CellProperties {
+  public readonly cellBorder: number;
+  public readonly cellSize: number;
+  public readonly canvasX: number;
+  public readonly canvasY: number;
+  public readonly fontSize: number;
+  public readonly nodeOffsetTop: number;
+  public readonly nodeWidth: number;
+  public readonly nodeHeight: number;
+  public readonly nodeHorzBorder: number;
+  public readonly nodeVertBorder: number;
+
+  constructor(private cells: ReadonlyMap<number, IGridCell>, draw: LifeCanvasDrawer, canvasOffsetX: number, canvasOffsetY: number) {
+    this.cellBorder = (draw.cell_width * draw.border_width | 0);
+    this.cellSize = Math.ceil(draw.cell_width) - this.cellBorder;
+    this.canvasX = canvasOffsetX;
+    this.canvasY = canvasOffsetY;
+    this.fontSize = this.cellSize / 29;
+    this.nodeOffsetTop = this.cellSize / 20;
+    this.nodeWidth = this.cellSize / 3.95;
+    this.nodeHeight = this.cellSize / 4.5;
+    this.nodeHorzBorder = (this.cellSize - (this.nodeWidth * 3)) / 4;
+    this.nodeVertBorder = (this.cellSize - this.nodeOffsetTop - (this.nodeHeight * 3)) / 4;
+  }
+
+  public getCellPoint(cell: IGridCell): IPoint {
+    return {
+      x: cell.left * (this.cellSize + this.cellBorder) + this.canvasX,
+      y: cell.top * (this.cellSize + this.cellBorder) + this.canvasY,
+    }
+  }
+
+
+  public * getNodes(cell: IGridCell): IterableIterator<IPoint & { node: INodeInfo }> {
+    let nodeX = this.nodeHorzBorder;
+    let nodeY = this.nodeVertBorder + this.nodeOffsetTop;
+    const cellX = cell.left * (this.cellSize + this.cellBorder) + this.canvasX;
+    const cellY = cell.top * (this.cellSize + this.cellBorder) + this.canvasY;
+
+    for (const item of cell.nodes) {
+      yield {
+        node: item,
+        x: cellX + nodeX,
+        y: cellY + nodeY,
+      };
+
+      nodeY += this.nodeHeight + this.nodeVertBorder;
+
+      if (nodeY >= this.cellSize) {
+        nodeY = this.nodeVertBorder + this.nodeOffsetTop;
+        nodeX += this.nodeWidth + this.nodeHorzBorder;
+      }
+    }
+  }
+
+  private findNode(cell: IGridCell | undefined, id: number): (IPoint & { node: INodeInfo }) | null {
+    if (cell) {
+      for (const item of this.getNodes(cell)) {
+        if (item.node.node.id === id) return item;
+      }
+    }
+
+    return null;
+  }
+  public findTarget(left: number, top: number, size: number, id: number): IPoint | null {
+    const pointer = left + top * size;
+    const target = this.cells.get(pointer);
+
+    if (target) {
+      for (const item of this.getNodes(target)) {
+        if (item.node.node.id === id) {
+          return {
+            x: item.x + this.nodeWidth / 2,
+            y: item.y + this.nodeHeight / 2,
+          };
+        }
+      }
+    }
+
+    return null;
   }
 }
 
@@ -213,26 +308,110 @@ export class LifeCanvasDrawer {
     this.context.putImageData(this.image_data, 0, 0);
   }
 
-  public redraw_debug(node: ITreeNode): void {
-    this._border_width = this.border_width * this.cell_width | 0;
-
-    this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
-
-    const cells = this.get_grid_cells(new RootNode(node));
-
-    this.draw_cells(cells);
-  }
-
-  public get_grid_cells(node: ITreeNode): IterableIterator<IGridCell> {
+  public get_cells(root: ITreeNode): ReadonlyMap<number, IGridCell> {
     const cells = new Map<number, IGridCell>()
-    const size = Math.pow(2, node.level - 1);
+    const size = Math.pow(2, root.level - 1);
 
-    LifeCanvasDrawer.collect_grid_cells(node, size * 2, 2 * size, -size, -size, cells);
+    LifeCanvasDrawer.collect_cells(new RootNode(root), size * 2, 2 * size, -size, -size, cells);
 
-    return cells.values();
+    return cells;
   }
 
-  private static collect_grid_cells(node: ITreeNode, width: number, size: number, left: number, top: number, cells: Map<number, IGridCell>): void {
+  public draw_connections(lines: Array<{ source: IPoint, target: IPoint }>): void {
+    this.context.strokeStyle = 'rgba(255,255,255,0.4)';
+    this.context.fillStyle = 'rgba(255,255,255,0.4)';
+    this.context.lineWidth = this.cell_width / 128;
+
+    for (const line of lines) {
+      this.context.beginPath();
+      this.context.moveTo(line.source.x, line.source.y);
+      this.context.lineTo(line.target.x, line.target.y);
+      this.context.stroke();
+
+      this.context.beginPath();
+      this.context.arc(line.target.x, line.target.y, this.cell_width / 100, 0, 2 * Math.PI);
+      this.context.fill();
+    }
+  }
+
+  public detect_mouse_hit(cells: ReadonlyMap<number, IGridCell>, root: ITreeNode, event: MouseEvent): Array<{ source: IPoint, target: IPoint }> {
+    const properties = new CellProperties(cells, this, this.canvas_offset_x, this.canvas_offset_y);
+    const {
+      cellBorder,
+      cellSize,
+      nodeWidth,
+      nodeHeight,
+    } = properties;
+
+    const size = Math.pow(2, root.level - 1) * 2;
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    const result: Array<{ source: IPoint, target: IPoint }> = [];
+
+    this.context.fillStyle = 'rgba(255,255,255,1)';
+
+    for (const cell of cells.values()) {
+      const point = properties.getCellPoint(cell);
+
+      for (const item of properties.getNodes(cell)) {
+        if (mouseX > item.x && mouseX < item.x + nodeWidth && mouseY > item.y && mouseY < item.y + nodeHeight) {
+          let target: IPoint | null;
+
+          if (target = properties.findTarget(cell.left, cell.top, size, item.node.node.nw.id)) {
+            result.push({
+              source: {
+                x: item.x,
+                y: item.y,
+              },
+              target: target
+            });
+          }
+
+          if (target = properties.findTarget(cell.left + item.node.size, cell.top, size, item.node.node.ne.id)) {
+            result.push({
+              source: {
+                x: item.x + nodeWidth,
+                y: item.y,
+              },
+              target: target
+            });
+          }
+
+
+          if (target = properties.findTarget(cell.left + item.node.size, cell.top + item.node.size, size, item.node.node.se.id)) {
+            result.push({
+              source: {
+                x: item.x + nodeWidth,
+                y: item.y + nodeHeight,
+              },
+              target: target
+            });
+          }
+
+          if (target = properties.findTarget(cell.left, cell.top + item.node.size, size, item.node.node.sw.id)) {
+            result.push({
+              source: {
+                x: item.x,
+                y: item.y + nodeHeight,
+              },
+              target: target
+            });
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private static distance(x1: number, y1: number, x2: number, y2: number): number {
+    const d1 = x1 - x2;
+    const d2 = y1 - y2;
+
+    return Math.sqrt(d1 * d1 + d2 * d2);
+  }
+
+  private static collect_cells(node: ITreeNode, width: number, size: number, left: number, top: number, cells: Map<number, IGridCell>): void {
     if (node) {
       const pointer = left + top * width;
 
@@ -250,10 +429,10 @@ export class LifeCanvasDrawer {
         size: size,
       });
 
-      this.collect_grid_cells(node.nw, width, size, left, top, cells);
-      this.collect_grid_cells(node.ne, width, size, left + size, top, cells);
-      this.collect_grid_cells(node.sw, width, size, left, top + size, cells);
-      this.collect_grid_cells(node.se, width, size, left + size, top + size, cells);
+      this.collect_cells(node.nw, width, size, left, top, cells);
+      this.collect_cells(node.ne, width, size, left + size, top, cells);
+      this.collect_cells(node.sw, width, size, left, top + size, cells);
+      this.collect_cells(node.se, width, size, left + size, top + size, cells);
     }
   }
 
@@ -268,37 +447,35 @@ export class LifeCanvasDrawer {
     return color;
   }
 
-  public draw_cells(cells: IterableIterator<IGridCell>) {
-    const cellBorder = (this.cell_width * this.border_width | 0);
-    const cellSize = Math.ceil(this.cell_width) - cellBorder;
-    const canvasX = this.canvas_offset_x;
-    const canvasY = this.canvas_offset_y;
+  public draw_cells(cells: ReadonlyMap<number, IGridCell>) {
+    const properties = new CellProperties(cells, this, this.canvas_offset_x, this.canvas_offset_y)
+    const {
+      cellSize,
+      fontSize,
+      nodeOffsetTop,
+      nodeWidth,
+      nodeHeight,
+    } = properties;
 
-    const fontSize = cellSize / 29;
-    const nodeOffsetTop = cellSize / 20;
-    const nodeWidth = cellSize / 3.95;
-    const nodeHeight = cellSize / 4.5;
-    const nodeHorzBorder = (cellSize - (nodeWidth * 3)) / 4;
-    const nodeVertBorder = (cellSize - nodeOffsetTop - (nodeHeight * 3)) / 4;
+    this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
 
     this.context.shadowOffsetX = 1;
     this.context.shadowOffsetY = 1;
     this.context.shadowBlur = 1;
     this.context.shadowColor = 'rgba(0,0,0,1)';
 
-    for (const cell of cells) {
-      const cellX = cell.left * (cellSize + cellBorder) + canvasX;
-      const cellY = cell.top * (cellSize + cellBorder) + canvasY;
+    for (const cell of cells.values()) {
+      const point = properties.getCellPoint(cell);
 
       if (
-        cellX + cellSize < 0 || cellY + cellSize < 0 ||
-        cellX > this.canvas_width || cellY > this.canvas_height
+        point.x + cellSize < 0 || point.y + cellSize < 0 ||
+        point.x > this.canvas_width || point.y > this.canvas_height
       ) {
         continue;
       }
 
       this.context.fillStyle = this.getCellColor(cell.nodes);//'#800000';
-      this.context.fillRect(cellX, cellY, cellSize, cellSize);
+      this.context.fillRect(point.x, point.y, cellSize, cellSize);
 
       this.context.fillStyle = '#ffffff';
 
@@ -307,32 +484,21 @@ export class LifeCanvasDrawer {
 
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
-        this.context.fillText(cell.left + ' , ' + cell.top, cellX + cellSize / 2, cellY + nodeOffsetTop * 1.2);
+        this.context.fillText(cell.left + ' , ' + cell.top, point.x + cellSize / 2, point.y + nodeOffsetTop * 1.2);
       }
-
-      let nodeX = nodeHorzBorder;
-      let nodeY = nodeVertBorder + nodeOffsetTop;
 
       this.context.strokeStyle = '#ffffff';
 
       if (cellSize >= 75) {
-        for (let index = 0; index < 1; index++) {
-          for (const item of cell.nodes) {
-            this.drawNode(item, cellX + nodeX, cellY + nodeY, nodeWidth, nodeHeight, fontSize);
-
-            nodeY += nodeHeight + nodeVertBorder;
-            if (nodeY >= cellSize) {
-              nodeY = nodeVertBorder + nodeOffsetTop;
-              nodeX += nodeWidth + nodeHorzBorder;
-            }
-          }
+        for (const item of properties.getNodes(cell)) {
+          this.drawNode(item.node, item.x, item.y, nodeWidth, nodeHeight, fontSize);
         }
       } else {
         this.context.font = 'bold ' + fontSize * 14 + 'px sans-serif';
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
 
-        this.context.fillText(cell.nodes.length.toString(), cellX + cellSize / 2, cellY + cellSize / 2 + cellSize / 25);
+        this.context.fillText(cell.nodes.length.toString(), point.x + cellSize / 2, point.y + cellSize / 2 + cellSize / 25);
       }
     }
   }
