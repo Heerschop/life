@@ -1,5 +1,5 @@
 import { LifeUniverse, ITreeNode } from './life';
-import { LifeCanvasDrawer } from './draw';
+import { LifeCanvasDrawer, IGridCell } from './draw';
 import { formats } from './formats';
 import { load_macrocell } from './macrocell';
 
@@ -90,6 +90,7 @@ const background_color = '#000000';
   const life = new LifeUniverse();
   let drawer: LifeCanvasDrawer;
   let debugMode = false;
+  let gridCells: ReadonlyMap<number, IGridCell>;
 
   /** @type {function(function())} */
   var nextFrame =
@@ -194,13 +195,15 @@ const background_color = '#000000';
     }
     else {
       // load_random();
-      debugMode = true;
-      // (drawer as any).canvas_offset_x = 8300;
-      // (drawer as any).canvas_offset_y = 8256;
-      drawer.cell_width = 1024;
-      drawer.zoom_at(false, -7000, -6800);
 
-      drawer.redraw(life.root, debugMode);
+      drawer.cell_width = 400;
+      drawer.zoom_at(false, -2000, -1800);
+
+      toggleDebugMode();
+
+      gridCells = drawer.get_cells(life.root);
+
+      drawer.draw_cells(gridCells);
     }
 
     if (parameters["noui"] === "1") {
@@ -218,6 +221,25 @@ const background_color = '#000000';
 
     if (parameters["fps"] && /^\d+$/.test(parameters["fps"])) {
       max_fps = +parameters["fps"];
+    }
+
+    function detect_mouse_hit(event: MouseEvent) {
+      const connections = drawer.detect_mouse_hit(gridCells, life.root, event);
+
+      if (connections.length > 0) {
+        drawer.draw_cells(gridCells);
+        drawer.draw_connections(connections);
+      }
+    }
+
+    function toggleDebugMode() {
+      window.removeEventListener("mousemove", detect_mouse_hit, true);
+
+      debugMode = !debugMode;
+
+      if (debugMode && drawer.cell_width > 50) {
+        window.addEventListener("mousemove", detect_mouse_hit, true);
+      }
     }
 
     function try_load_meta() {
@@ -371,7 +393,15 @@ const background_color = '#000000';
           update_hud();
 
           drawer.center_view();
-          drawer.redraw(life.root, debugMode);
+
+          if (debugMode) {
+            gridCells = drawer.get_cells(life.root);
+
+            drawer.draw_cells(gridCells);
+          }
+
+          else
+            drawer.redraw(life.root);
         });
       };
 
@@ -381,7 +411,14 @@ const background_color = '#000000';
             life.restore_rewind_state();
 
             fit_pattern();
-            drawer.redraw(life.root, debugMode);
+
+            if (debugMode) {
+              gridCells = drawer.get_cells(life.root);
+
+              drawer.draw_cells(gridCells);
+            }
+            else
+              drawer.redraw(life.root);
 
             update_hud();
           });
@@ -529,6 +566,14 @@ const background_color = '#000000';
         e.preventDefault();
         drawer.zoom_at((e.wheelDelta || -e.detail) < 0, e.clientX, e.clientY);
 
+        if (debugMode) {
+          console.log(drawer.cell_width);
+          if (drawer.cell_width > 50)
+            window.addEventListener("mousemove", detect_mouse_hit, true);
+          else
+            window.removeEventListener("mousemove", detect_mouse_hit, true);
+        }
+
         update_hud();
         lazy_redraw(life.root);
         return false;
@@ -553,7 +598,7 @@ const background_color = '#000000';
         }
 
         if (chr === 68) {
-          debugMode = !debugMode;
+          toggleDebugMode();
 
           lazy_redraw(life.root);
         }
@@ -1100,7 +1145,15 @@ const background_color = '#000000';
       hide_overlay();
 
       fit_pattern();
-      drawer.redraw(life.root, debugMode);
+
+      if (debugMode) {
+        gridCells = drawer.get_cells(life.root);
+        console.log('1. gridCells = drawer.get_grid_cells(life.root);');
+
+        drawer.draw_cells(gridCells);
+      }
+      else
+        drawer.redraw(life.root);
 
       update_hud();
       set_text($("pattern_name"), result.title || "no name");
@@ -1190,7 +1243,14 @@ const background_color = '#000000';
 
       if (per_frame * n < (time - start)) {
         life.next_generation(true);
-        drawer.redraw(life.root, debugMode);
+
+        if (debugMode) {
+          gridCells = drawer.get_cells(life.root);
+
+          drawer.draw_cells(gridCells);
+        }
+        else
+          drawer.redraw(life.root);
 
         n++;
 
@@ -1218,7 +1278,13 @@ const background_color = '#000000';
 
     life.next_generation(is_single);
 
-    drawer.redraw(life.root, debugMode);
+    if (debugMode) {
+      gridCells = drawer.get_cells(life.root);
+
+      drawer.draw_cells(gridCells);
+    }
+    else
+      drawer.redraw(life.root);
 
     update_hud(1000 / (Date.now() - time));
 
@@ -1313,7 +1379,10 @@ const background_color = '#000000';
 
   function lazy_redraw(node: ITreeNode) {
     if (!running || max_fps < 15) {
-      drawer.redraw(node, debugMode);
+      if (debugMode)
+        drawer.draw_cells(gridCells);
+      else
+        drawer.redraw(life.root);
     }
   }
 
@@ -1445,7 +1514,11 @@ const background_color = '#000000';
       last_mouse_x = coords.x;
       last_mouse_y = coords.y;
 
-      if (debugMode) drawer.redraw(life.root, debugMode);
+      if (debugMode) {
+        gridCells = drawer.get_cells(life.root);
+
+        drawer.draw_cells(gridCells);
+      }
     }
   }
 
