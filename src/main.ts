@@ -197,8 +197,10 @@ const background_color = '#000000';
       debugMode = true;
       // (drawer as any).canvas_offset_x = 8300;
       // (drawer as any).canvas_offset_y = 8256;
-      drawer.cell_width = 1024;
-      drawer.zoom_at(false, -7000, -6800);
+      // drawer.cell_width = 1024;
+      // drawer.zoom_at(false, -7000, -6800);
+      drawer.cell_width = 400;
+      drawer.zoom_at(false, -2000, -1800);
 
       drawer.redraw(life.root, debugMode);
     }
