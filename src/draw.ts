@@ -1,17 +1,14 @@
 import { ITreeNode, IBounds, IPoint } from "./life";
 
-interface IRelations {
-  nw: IPoint | null;
-  ne: IPoint | null;
-  sw: IPoint | null;
-  se: IPoint | null;
+interface INodeInfo {
+  node: ITreeNode;
+  size: number;
 }
 
 interface IGridCell {
   left: number;
   top: number;
-  live: boolean;
-  nodes: Array<ITreeNode & { type: string, size: number }>;
+  nodes: Array<INodeInfo>;
 }
 
 class RootNode implements ITreeNode {
@@ -203,12 +200,13 @@ export class LifeCanvasDrawer {
   public redraw(node: ITreeNode): void {
     this._border_width = this.border_width * this.cell_width | 0;
 
-    const size = Math.pow(2, node.level - 1) * this.cell_width;
     const count = this.canvas_width * this.canvas_height;
 
     for (let i = 0; i < count; i++) {
       this.image_data_data[i] = this.background_color;
     }
+
+    const size = Math.pow(2, node.level - 1) * this.cell_width;
 
     this.draw_node(node, 2 * size, -size, -size);
 
@@ -241,29 +239,16 @@ export class LifeCanvasDrawer {
       let cell = cells.get(pointer);
 
       if (cell === undefined) {
-        cell = { left: left, top: top, live: false, nodes: [] };
+        cell = { left: left, top: top, nodes: [] };
         cells.set(pointer, cell)
       }
 
-      const relations: IRelations = {
-        nw: null,
-        ne: null,
-        sw: null,
-        se: null,
-      }
-
-      size /= 2;
+      size = Math.ceil(size / 2);
 
       cell.nodes.push({
-        ...node,
-        type: node.constructor.name,
-        size: size
+        node: node,
+        size: size,
       });
-
-      if (node.nw) relations.nw = { x: left, y: top };
-      if (node.ne) relations.ne = { x: left + size, y: top };
-      if (node.sw) relations.sw = { x: left, y: top + size };
-      if (node.se) relations.se = { x: left + size, y: top + size };
 
       this.collect_grid_cells(node.nw, width, size, left, top, cells);
       this.collect_grid_cells(node.ne, width, size, left + size, top, cells);
@@ -272,12 +257,12 @@ export class LifeCanvasDrawer {
     }
   }
 
-  private getCellColor(nodes: ITreeNode[]): string {
+  private getCellColor(nodes: INodeInfo[]): string {
     let color = '#700000';
 
-    for (const node of nodes) {
-      if (node.id === 2) return '#cccccc';
-      if (node.id !== 3) color = '#000070';
+    for (const item of nodes) {
+      if (item.node.id === 2) return '#cccccc';
+      if (item.node.id !== 3) color = '#000070';
     }
 
     return color;
@@ -305,6 +290,13 @@ export class LifeCanvasDrawer {
       const cellX = cell.left * (cellSize + cellBorder) + canvasX;
       const cellY = cell.top * (cellSize + cellBorder) + canvasY;
 
+      if (
+        cellX + cellSize < 0 || cellY + cellSize < 0 ||
+        cellX > this.canvas_width || cellY > this.canvas_height
+      ) {
+        continue;
+      }
+
       this.context.fillStyle = this.getCellColor(cell.nodes);//'#800000';
       this.context.fillRect(cellX, cellY, cellSize, cellSize);
 
@@ -325,8 +317,8 @@ export class LifeCanvasDrawer {
 
       if (cellSize >= 75) {
         for (let index = 0; index < 1; index++) {
-          for (const node of cell.nodes) {
-            this.drawNode(node, cellX + nodeX, cellY + nodeY, nodeWidth, nodeHeight, fontSize);
+          for (const item of cell.nodes) {
+            this.drawNode(item, cellX + nodeX, cellY + nodeY, nodeWidth, nodeHeight, fontSize);
 
             nodeY += nodeHeight + nodeVertBorder;
             if (nodeY >= cellSize) {
@@ -345,7 +337,9 @@ export class LifeCanvasDrawer {
     }
   }
 
-  private drawNode(node: ITreeNode, x: number, y: number, width: number, height: number, fontSize: number) {
+  private drawNode(info: INodeInfo, x: number, y: number, width: number, height: number, fontSize: number) {
+    const node = info.node;
+
     this.context.fillStyle = 'rgba(255,255,255,0.4)';
     this.context.fillRect(x, y, width, height);
 
@@ -373,6 +367,7 @@ export class LifeCanvasDrawer {
       this.context.font = 'bold ' + fontSize * 0.7 + 'px sans-serif';
 
       const offset = height / 120;
+
       if (node.nw) this.context.fillText(node.nw.objectId.toString(), x, y + offset);
       if (node.ne) this.context.fillText(node.ne.objectId.toString(), x + width, y + offset);
       if (node.se) this.context.fillText(node.se.objectId.toString(), x + width, y + height + offset);
@@ -385,7 +380,7 @@ export class LifeCanvasDrawer {
 
       this.context.textAlign = 'left';
       this.context.font = 'bold ' + fontSize * 0.9 + 'px sans-serif';
-      this.context.fillText((node as any).type, x + maring, y);
+      this.context.fillText(node.constructor.name, x + maring, y);
       this.context.textAlign = 'right';
       this.context.fillText(node.objectId.toString(), x + width - maring, y);
 
@@ -396,7 +391,7 @@ export class LifeCanvasDrawer {
       this.context.fillText('id: ' + node.id, x + maring, (y += rowSpace));
       this.context.fillText('level: ' + node.level, x + maring, (y += rowSpace));
       this.context.fillText('population: ' + node.population, x + maring, (y += rowSpace));
-      this.context.fillText('size: ' + ((node as any).size), x + maring, (y += rowSpace));
+      this.context.fillText('size: ' + info.size, x + maring, (y += rowSpace));
     }
     if (width > 18 && width < 75) {
       const offset = height / 20;
