@@ -193,7 +193,14 @@ const background_color = '#000000';
       }
     }
     else {
-      load_random();
+      // load_random();
+      debugMode = true;
+      // (drawer as any).canvas_offset_x = 8300;
+      // (drawer as any).canvas_offset_y = 8256;
+      drawer.cell_width = 1024;
+      drawer.zoom_at(false, -7000, -6800);
+
+      drawer.redraw(life.root, debugMode);
     }
 
     if (parameters["noui"] === "1") {

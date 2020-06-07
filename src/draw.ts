@@ -11,7 +11,35 @@ interface IGridCell {
   left: number;
   top: number;
   live: boolean;
-  nodes: Array<ITreeNode & { relations: IRelations, size: number }>;
+  nodes: Array<ITreeNode & { type: string, size: number }>;
+}
+
+class RootNode implements ITreeNode {
+  public readonly objectId: number;
+  public readonly level: number;
+  public readonly population: number;
+  public readonly cache: ITreeNode | null;
+  public readonly quick_cache: ITreeNode | null;
+  public readonly hashmap_next: ITreeNode | undefined;
+  public readonly nw: ITreeNode;
+  public readonly ne: ITreeNode;
+  public readonly sw: ITreeNode;
+  public readonly se: ITreeNode;
+  public readonly id: number;
+
+  constructor(node: ITreeNode) {
+    this.objectId = node.objectId;
+    this.level = node.level;
+    this.population = node.population;
+    this.cache = node.cache;
+    this.quick_cache = node.quick_cache;
+    this.hashmap_next = node.hashmap_next;
+    this.nw = node.nw;
+    this.ne = node.ne;
+    this.sw = node.sw;
+    this.se = node.se;
+    this.id = node.id;
+  }
 }
 
 export class LifeCanvasDrawer {
@@ -180,7 +208,7 @@ export class LifeCanvasDrawer {
     if (debug) {
       this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
 
-      const cells = this.draw_cells(node, 2 * size, -size, -size);
+      const cells = this.draw_cells(new RootNode(node), 2 * size, -size, -size);
 
       this.draw_text(cells);
 
@@ -250,9 +278,10 @@ export class LifeCanvasDrawer {
 
     if (cellSize >= 384) {
       const fontSize = cellSize / 29;
-      const rowSpace = cellSize / 24;
+      const rowSpace = cellSize / 30;
       const rectOffsetX = cellSize / 64;
       const rectOffsetY = cellSize / 64;
+      const textIndent = cellSize / 60;
 
       this.context.textAlign = 'left';
 
@@ -268,8 +297,10 @@ export class LifeCanvasDrawer {
         this.context.fillText('Nodes: ' + cell.nodes.length.toString(), x + offsetX, y + offsetY * 1.2);
 
         this.context.textAlign = 'right';
-        this.context.fillText(cell.left + ' , ' + cell.top, x + cellSize * 0.95, y + offsetY * 1.2);
+        this.context.fillText((cell.left / this.cell_width) + ' , ' + (cell.top / this.cell_width), x + cellSize * 0.95, y + offsetY * 1.2);
         this.context.textAlign = 'left';
+
+        offsetY += rowSpace / 2;
 
         for (const node of cell.nodes) {
           offsetY += rowSpace;
@@ -279,60 +310,84 @@ export class LifeCanvasDrawer {
           const rectW = cellSize / 3.95;
           const rectH = cellSize / 4.5;
 
-
           this.context.fillStyle = 'rgba(255,255,255,0.4)';
           this.context.fillRect(rectX, rectY, rectW, rectH);
 
-          this.context.fillStyle = '#ffffff';
-          this.context.font = 'bold ' + fontSize + 'px sans-serif';
-          this.context.fillText(node.constructor.name.toString(), x + offsetX, y + (offsetY += rowSpace));
-          this.context.textAlign = 'right';
-          this.context.fillText(node.objectId.toString(), rectX + rectW * 0.95, y + offsetY);
+          this.context.textAlign = 'center';
+          this.context.strokeStyle = '#ffffff';
+          this.context.font = 'bold ' + fontSize * 0.7 + 'px sans-serif';
 
-          this.context.textAlign = 'left';
-          this.context.font = fontSize + 'px sans-serif';
-          this.context.fillText('id: ' + node.id.toString(), x + offsetX, y + (offsetY += rowSpace));
-          this.context.fillText('level: ' + node.level.toString(), x + offsetX, y + (offsetY += rowSpace));
-          this.context.fillText('population: ' + node.population.toString(), x + offsetX, y + (offsetY += rowSpace));
-          this.context.fillText('size: ' + node.size.toString(), x + offsetX, y + (offsetY += rowSpace));
-          // this.context.fillText('left: ' + node.left.toString(), x + offsetX, y + (offsetY += rowSpace));
-          // this.context.fillText('top: ' + node.top.toString(), x + offsetX, y + (offsetY += rowSpace));
+          this.context.beginPath();
+          this.context.arc(rectX, rectY, cellSize / 55, 0, 2 * Math.PI);
+          this.context.fill();
+          this.context.beginPath();
+          this.context.arc(rectX + rectW, rectY, cellSize / 55, 0, 2 * Math.PI);
+          this.context.fill();
+          this.context.beginPath();
+          this.context.arc(rectX + rectW, rectY + rectH, cellSize / 55, 0, 2 * Math.PI);
+          this.context.fill();
+          this.context.beginPath();
+          this.context.arc(rectX, rectY + rectH, cellSize / 55, 0, 2 * Math.PI);
+          this.context.fill();
+
+          this.context.fillStyle = '#ffffff';
+          if (node.nw) this.context.fillText(node.nw.objectId.toString(), rectX, rectY + cellSize / 535);
+          if (node.ne) this.context.fillText(node.ne.objectId.toString(), rectX + rectW, rectY + cellSize / 535);
+          if (node.se) this.context.fillText(node.se.objectId.toString(), rectX + rectW, rectY + rectH + cellSize / 535);
+          if (node.sw) this.context.fillText(node.sw.objectId.toString(), rectX, rectY + rectH + cellSize / 535);
 
           offsetY += rowSpace / 2;
 
+          this.context.textAlign = 'left';
+          this.context.fillStyle = '#ffffff';
+          this.context.font = 'bold ' + fontSize * 0.9 + 'px sans-serif';
+          this.context.fillText(node.type, x + offsetX + textIndent, y + (offsetY += rowSpace));
+          this.context.textAlign = 'right';
+          this.context.fillText(node.objectId.toString(), rectX + rectW * 0.90, y + offsetY);
+
+          offsetY += rowSpace / 2;
+
+          this.context.textAlign = 'left';
+          this.context.font = fontSize * 0.8 + 'px sans-serif';
+          this.context.fillText('id: ' + node.id.toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
+          this.context.fillText('level: ' + node.level.toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
+          this.context.fillText('population: ' + node.population.toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
+          this.context.fillText('size: ' + (node.size / this.cell_width).toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
+
+          offsetY += rowSpace * 1.5;
+
           if (offsetY > (cellSize / 1.5)) {
-            offsetY = cellSize / 21;
+            offsetY = cellSize / 21 + rowSpace / 2;
             offsetX += cellSize / 3.3;
           }
 
           if (cell.left === 0 && cell.top === 0) {
             this.context.strokeStyle = '#ffffff';
 
-            if (node.relations.ne) {
-              this.context.beginPath();
-              this.context.moveTo(rectX + rectW, rectY);
-              this.context.lineTo(node.relations.ne.x + cellSize / 2, node.relations.ne.y + cellSize / 2);
-              this.context.stroke();
-            }
-
-            if (node.relations.nw) {
+            if (node.nw) {
               this.context.beginPath();
               this.context.moveTo(rectX, rectY);
-              this.context.lineTo(node.relations.nw.x + cellSize / 2, node.relations.nw.y + cellSize / 2);
+              this.context.lineTo(x + cellSize / 2, y + cellSize / 2);
               this.context.stroke();
             }
 
-            if (node.relations.se) {
+            if (node.ne) {
               this.context.beginPath();
-              this.context.moveTo(rectX + rectW, rectY + rectH);
-              this.context.lineTo(node.relations.se.x + cellSize / 2, node.relations.se.y + cellSize / 2);
+              this.context.moveTo(rectX + rectW, rectY);
+              this.context.lineTo(x + node.size + cellSize / 2, y + cellSize / 2);
               this.context.stroke();
             }
-
-            if (node.relations.sw) {
+            if (node.sw) {
               this.context.beginPath();
               this.context.moveTo(rectX, rectY + rectH);
-              this.context.lineTo(node.relations.sw.x + cellSize / 2, node.relations.sw.y + cellSize / 2);
+              this.context.lineTo(x + cellSize / 2, y + node.size + cellSize / 2);
+              this.context.stroke();
+            }
+
+            if (node.se) {
+              this.context.beginPath();
+              this.context.moveTo(rectX + rectW, rectY + rectH);
+              this.context.lineTo(x + node.size + cellSize / 2, y + node.size + cellSize / 2);
               this.context.stroke();
             }
           }
@@ -367,7 +422,7 @@ export class LifeCanvasDrawer {
 
       cell.nodes.push({
         ...node,
-        relations: relations,
+        type: node.constructor.name,
         size: size
       });
 
