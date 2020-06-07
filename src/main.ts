@@ -202,7 +202,7 @@ const background_color = '#000000';
       drawer.cell_width = 400;
       drawer.zoom_at(false, -2000, -1800);
 
-      drawer.redraw(life.root, debugMode);
+      drawer.redraw_debug(life.root);
     }
 
     if (parameters["noui"] === "1") {
@@ -373,7 +373,11 @@ const background_color = '#000000';
           update_hud();
 
           drawer.center_view();
-          drawer.redraw(life.root, debugMode);
+
+          if (debugMode)
+            drawer.redraw_debug(life.root);
+          else
+            drawer.redraw(life.root);
         });
       };
 
@@ -383,7 +387,11 @@ const background_color = '#000000';
             life.restore_rewind_state();
 
             fit_pattern();
-            drawer.redraw(life.root, debugMode);
+
+            if (debugMode)
+              drawer.redraw_debug(life.root);
+            else
+              drawer.redraw(life.root);
 
             update_hud();
           });
@@ -1102,7 +1110,11 @@ const background_color = '#000000';
       hide_overlay();
 
       fit_pattern();
-      drawer.redraw(life.root, debugMode);
+
+      if (debugMode)
+        drawer.redraw_debug(life.root);
+      else
+        drawer.redraw(life.root);
 
       update_hud();
       set_text($("pattern_name"), result.title || "no name");
@@ -1192,7 +1204,11 @@ const background_color = '#000000';
 
       if (per_frame * n < (time - start)) {
         life.next_generation(true);
-        drawer.redraw(life.root, debugMode);
+
+        if (debugMode)
+          drawer.redraw_debug(life.root);
+        else
+          drawer.redraw(life.root);
 
         n++;
 
@@ -1220,7 +1236,10 @@ const background_color = '#000000';
 
     life.next_generation(is_single);
 
-    drawer.redraw(life.root, debugMode);
+    if (debugMode)
+      drawer.redraw_debug(life.root);
+    else
+      drawer.redraw(life.root);
 
     update_hud(1000 / (Date.now() - time));
 
@@ -1315,7 +1334,10 @@ const background_color = '#000000';
 
   function lazy_redraw(node: ITreeNode) {
     if (!running || max_fps < 15) {
-      drawer.redraw(node, debugMode);
+      if (debugMode)
+        drawer.redraw_debug(life.root);
+      else
+        drawer.redraw(life.root);
     }
   }
 
@@ -1447,7 +1469,7 @@ const background_color = '#000000';
       last_mouse_x = coords.x;
       last_mouse_y = coords.y;
 
-      if (debugMode) drawer.redraw(life.root, debugMode);
+      if (debugMode) drawer.redraw_debug(life.root);
     }
   }
 

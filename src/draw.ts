@@ -200,202 +200,30 @@ export class LifeCanvasDrawer {
     }
   }
 
-  public redraw(node: ITreeNode, debug: boolean): void {
+  public redraw(node: ITreeNode): void {
     this._border_width = this.border_width * this.cell_width | 0;
 
-    if (debug) {
-      this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
+    const size = Math.pow(2, node.level - 1) * this.cell_width;
+    const count = this.canvas_width * this.canvas_height;
 
-      const cells = this.get_grid_cells(new RootNode(node));
-
-      this.draw_cells(cells);
-    } else {
-      const size = Math.pow(2, node.level - 1) * this.cell_width;
-      const count = this.canvas_width * this.canvas_height;
-
-      for (let i = 0; i < count; i++) {
-        this.image_data_data[i] = this.background_color;
-      }
-
-      this.draw_node(node, 2 * size, -size, -size);
-
-      this.context.putImageData(this.image_data, 0, 0);
+    for (let i = 0; i < count; i++) {
+      this.image_data_data[i] = this.background_color;
     }
+
+    this.draw_node(node, 2 * size, -size, -size);
+
+    this.context.putImageData(this.image_data, 0, 0);
   }
 
-  // private draw_text(cells: Map<number, IGridCell>) {
-  //   const cellSize = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
+  public redraw_debug(node: ITreeNode): void {
+    this._border_width = this.border_width * this.cell_width | 0;
 
-  //   this.context.textBaseline = 'middle';
+    this.context.clearRect(0, 0, this.canvas_width, this.canvas_height);
 
-  //   if (cellSize >= 24) {
-  //     this.context.shadowOffsetX = 1;
-  //     this.context.shadowOffsetY = 1;
-  //     this.context.shadowBlur = 1;
-  //     this.context.shadowColor = 'rgba(0,0,0,1)';
+    const cells = this.get_grid_cells(new RootNode(node));
 
-  //     if (cellSize >= 24 && cellSize < 96) {
-  //       let fontSize = cellSize / 1.7;
-
-  //       this.context.fillStyle = '#ffffff';
-  //       this.context.font = fontSize + 'px sans-serif';
-  //       this.context.textAlign = 'center';
-
-  //       for (const cell of cells.values()) {
-  //         const x = cell.left + this.canvas_offset_x | 0;
-  //         const y = cell.top + this.canvas_offset_y | 0;
-
-  //         this.context.fillText(cell.nodes.length.toString(), x + cellSize / 2, y + cellSize / 2);
-  //       }
-  //     }
-  //   }
-
-  //   if (cellSize >= 96 && cellSize < 384) {
-  //     const fontSize = cellSize / 8;
-
-  //     this.context.fillStyle = '#ffffff';
-  //     this.context.textAlign = 'center';
-
-  //     for (const cell of cells.values()) {
-  //       const x = cell.left + this.canvas_offset_x | 0;
-  //       const y = cell.top + this.canvas_offset_y | 0;
-
-  //       this.context.font = 'bold ' + fontSize * 1.1 + 'px sans-serif';
-  //       this.context.fillText('Nodes: ' + cell.nodes.length.toString(), x + cellSize / 2, y + cellSize / 7);
-
-  //       let population: number[] = [];
-
-  //       for (const node of cell.nodes) {
-  //         population.push(node.population);
-  //       }
-
-  //       this.context.font = fontSize + 'px sans-serif';
-  //       this.context.fillText(population.join('-'), x + cellSize / 2, y + cellSize / 2);
-  //     }
-  //   }
-
-  //   if (cellSize >= 384) {
-  //     const fontSize = cellSize / 29;
-  //     const rowSpace = cellSize / 30;
-  //     const rectOffsetX = cellSize / 64;
-  //     const rectOffsetY = cellSize / 64;
-  //     const textIndent = cellSize / 60;
-
-  //     this.context.textAlign = 'left';
-
-  //     for (const cell of cells.values()) {
-  //       const x = cell.left + this.canvas_offset_x | 0;
-  //       const y = cell.top + this.canvas_offset_y | 0;
-
-  //       let offsetX = cellSize / 11.5;
-  //       let offsetY = cellSize / 21;
-
-  //       this.context.font = 'bold ' + fontSize * 1.3 + 'px sans-serif';
-  //       this.context.fillStyle = '#ffffff';
-  //       this.context.fillText('Nodes: ' + cell.nodes.length.toString(), x + offsetX, y + offsetY * 1.2);
-
-  //       this.context.textAlign = 'right';
-  //       this.context.fillText((cell.left / this.cell_width) + ' , ' + (cell.top / this.cell_width), x + cellSize * 0.95, y + offsetY * 1.2);
-  //       this.context.textAlign = 'left';
-
-  //       offsetY += rowSpace / 2;
-
-  //       for (let index = 0; index < 2; index++) {
-
-  //         for (const node of cell.nodes) {
-  //           offsetY += rowSpace;
-
-  //           const rectX = x + offsetX - rectOffsetX;
-  //           const rectY = y + offsetY + rectOffsetY;
-  //           const rectW = cellSize / 3.95;
-  //           const rectH = cellSize / 4.5;
-
-  //           this.context.fillStyle = 'rgba(255,255,255,0.4)';
-  //           this.context.fillRect(rectX, rectY, rectW, rectH);
-
-  //           this.context.textAlign = 'center';
-  //           this.context.strokeStyle = '#ffffff';
-  //           this.context.font = 'bold ' + fontSize * 0.7 + 'px sans-serif';
-
-  //           this.context.beginPath();
-  //           this.context.arc(rectX, rectY, cellSize / 55, 0, 2 * Math.PI);
-  //           this.context.fill();
-  //           this.context.beginPath();
-  //           this.context.arc(rectX + rectW, rectY, cellSize / 55, 0, 2 * Math.PI);
-  //           this.context.fill();
-  //           this.context.beginPath();
-  //           this.context.arc(rectX + rectW, rectY + rectH, cellSize / 55, 0, 2 * Math.PI);
-  //           this.context.fill();
-  //           this.context.beginPath();
-  //           this.context.arc(rectX, rectY + rectH, cellSize / 55, 0, 2 * Math.PI);
-  //           this.context.fill();
-
-  //           this.context.fillStyle = '#ffffff';
-  //           if (node.nw) this.context.fillText(node.nw.objectId.toString(), rectX, rectY + cellSize / 535);
-  //           if (node.ne) this.context.fillText(node.ne.objectId.toString(), rectX + rectW, rectY + cellSize / 535);
-  //           if (node.se) this.context.fillText(node.se.objectId.toString(), rectX + rectW, rectY + rectH + cellSize / 535);
-  //           if (node.sw) this.context.fillText(node.sw.objectId.toString(), rectX, rectY + rectH + cellSize / 535);
-
-  //           offsetY += rowSpace / 2;
-
-  //           this.context.textAlign = 'left';
-  //           this.context.fillStyle = '#ffffff';
-  //           this.context.font = 'bold ' + fontSize * 0.9 + 'px sans-serif';
-  //           this.context.fillText(node.type, x + offsetX + textIndent, y + (offsetY += rowSpace));
-  //           this.context.textAlign = 'right';
-  //           this.context.fillText(node.objectId.toString(), rectX + rectW * 0.90, y + offsetY);
-
-  //           offsetY += rowSpace / 2;
-
-  //           this.context.textAlign = 'left';
-  //           this.context.font = fontSize * 0.8 + 'px sans-serif';
-  //           this.context.fillText('id: ' + node.id.toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
-  //           this.context.fillText('level: ' + node.level.toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
-  //           this.context.fillText('population: ' + node.population.toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
-  //           this.context.fillText('size: ' + (node.size / this.cell_width).toString(), x + offsetX + textIndent, y + (offsetY += rowSpace));
-
-  //           offsetY += rowSpace * 1.5;
-
-  //           if (offsetY > (cellSize / 1.5)) {
-  //             offsetY = cellSize / 21 + rowSpace / 2;
-  //             offsetX += cellSize / 3.3;
-  //           }
-
-  //           if (cell.left === 0 && cell.top === 0) {
-  //             this.context.strokeStyle = '#ffffff';
-
-  //             if (node.nw) {
-  //               this.context.beginPath();
-  //               this.context.moveTo(rectX, rectY);
-  //               this.context.lineTo(x + cellSize / 2, y + cellSize / 2);
-  //               this.context.stroke();
-  //             }
-
-  //             if (node.ne) {
-  //               this.context.beginPath();
-  //               this.context.moveTo(rectX + rectW, rectY);
-  //               this.context.lineTo(x + node.size + cellSize / 2, y + cellSize / 2);
-  //               this.context.stroke();
-  //             }
-  //             if (node.sw) {
-  //               this.context.beginPath();
-  //               this.context.moveTo(rectX, rectY + rectH);
-  //               this.context.lineTo(x + cellSize / 2, y + node.size + cellSize / 2);
-  //               this.context.stroke();
-  //             }
-
-  //             if (node.se) {
-  //               this.context.beginPath();
-  //               this.context.moveTo(rectX + rectW, rectY + rectH);
-  //               this.context.lineTo(x + node.size + cellSize / 2, y + node.size + cellSize / 2);
-  //               this.context.stroke();
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
+    this.draw_cells(cells);
+  }
 
   public get_grid_cells(node: ITreeNode): IterableIterator<IGridCell> {
     const cells = new Map<number, IGridCell>()
@@ -576,68 +404,6 @@ export class LifeCanvasDrawer {
       this.context.fillText(node.population.toString(), x + width / 2, y + height / 2 + offset);
     }
   }
-
-  // private draw_cells(node: ITreeNode, size: number, left: number, top: number, cells = new Map<number, IGridCell>()): Map<number, IGridCell> {
-  //   if (node) {
-  //     let cellSize = Math.ceil(this.cell_width) - (this.cell_width * this.border_width | 0);
-
-  //     const x = left + this.canvas_offset_x | 0;
-  //     const y = top + this.canvas_offset_y | 0;
-  //     const pointer = x + y * this.canvas_width;
-
-  //     let cell = cells.get(pointer);
-
-  //     if (cell === undefined) {
-  //       cell = { left: left, top: top, live: false, nodes: [] };
-  //       cells.set(pointer, cell)
-  //     }
-
-  //     const relations: IRelations = {
-  //       nw: null,
-  //       ne: null,
-  //       sw: null,
-  //       se: null,
-  //     }
-
-  //     size /= 2;
-
-  //     cell.nodes.push({
-  //       ...node,
-  //       type: node.constructor.name,
-  //       size: size
-  //     });
-
-  //     if (node.nw) relations.nw = { x: x, y: y };
-  //     if (node.ne) relations.ne = { x: x + size, y: y };
-  //     if (node.sw) relations.sw = { x: x, y: y + size };
-  //     if (node.se) relations.se = { x: x + size, y: y + size };
-
-  //     this.draw_cells(node.nw, size, left, top, cells);
-  //     this.draw_cells(node.ne, size, left + size, top, cells);
-  //     this.draw_cells(node.sw, size, left, top + size, cells);
-  //     this.draw_cells(node.se, size, left + size, top + size, cells);
-
-  //     if (cell.live) return cells;
-
-  //     let color = '#000070';
-
-  //     if (node.id === 3) {
-  //       color = '#700000';  // false leaf
-  //     }
-
-  //     if (node.id === 2) {
-  //       cell.live = true;
-  //       color = '#cccccc';  // true  leaf
-  //     }
-
-  //     if (x + cellSize < 0 || y + cellSize < 0 || x >= this.canvas_width || y >= this.canvas_height) return cells;
-
-  //     this.context.fillStyle = color;
-  //     this.context.fillRect(x, y, cellSize, cellSize);
-  //   }
-
-  //   return cells;
-  // }
 
   /**
    * @param {number} center_x
