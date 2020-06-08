@@ -337,8 +337,6 @@ export class LifeCanvasDrawer {
   public detect_mouse_hit(cells: ReadonlyMap<number, IGridCell>, root: ITreeNode, event: MouseEvent): Array<{ source: IPoint, target: IPoint }> {
     const properties = new CellProperties(cells, this, this.canvas_offset_x, this.canvas_offset_y);
     const {
-      cellBorder,
-      cellSize,
       nodeWidth,
       nodeHeight,
     } = properties;
@@ -402,13 +400,6 @@ export class LifeCanvasDrawer {
     }
 
     return result;
-  }
-
-  private static distance(x1: number, y1: number, x2: number, y2: number): number {
-    const d1 = x1 - x2;
-    const d2 = y1 - y2;
-
-    return Math.sqrt(d1 * d1 + d2 * d2);
   }
 
   private static collect_cells(node: ITreeNode, width: number, size: number, left: number, top: number, cells: Map<number, IGridCell>): void {
