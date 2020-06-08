@@ -194,16 +194,17 @@ const background_color = '#000000';
       }
     }
     else {
-      // load_random();
+      load_random();
+      // life.clear_pattern();
 
-      drawer.cell_width = 400;
-      drawer.zoom_at(false, -2000, -1800);
+      // drawer.cell_width = 400;
+      // drawer.zoom_at(false, -2000, -1800);
 
-      toggleDebugMode();
+      // toggleDebugMode();
 
-      gridCells = drawer.get_cells(life.root);
+      // gridCells = drawer.get_cells(life.root);
 
-      drawer.draw_cells(gridCells);
+      // drawer.draw_cells(gridCells);
     }
 
     if (parameters["noui"] === "1") {
@@ -237,8 +238,10 @@ const background_color = '#000000';
 
       debugMode = !debugMode;
 
-      if (debugMode && drawer.cell_width > 50) {
-        window.addEventListener("mousemove", detect_mouse_hit, true);
+      if (debugMode) {
+        gridCells = drawer.get_cells(life.root);
+
+        if (drawer.cell_width > 50) window.addEventListener("mousemove", detect_mouse_hit, true);
       }
     }
 
