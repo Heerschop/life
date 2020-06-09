@@ -194,17 +194,18 @@ const background_color = '#000000';
       }
     }
     else {
-      load_random();
-      // life.clear_pattern();
+      //load_random();
+      life.clear_pattern();
+      drawer.resetNodeIds();
 
-      // drawer.cell_width = 400;
-      // drawer.zoom_at(false, -2000, -1800);
+      drawer.cell_width = 400;
+      drawer.zoom_at(false, -2000, -1800);
 
-      // toggleDebugMode();
+      toggleDebugMode();
 
-      // gridCells = drawer.get_cells(life.root);
+      gridCells = drawer.get_cells(life.root);
 
-      // drawer.draw_cells(gridCells);
+      drawer.draw_cells(gridCells);
     }
 
     if (parameters["noui"] === "1") {
@@ -393,6 +394,7 @@ const background_color = '#000000';
           set_query("");
 
           life.clear_pattern();
+          drawer.resetNodeIds();
           update_hud();
 
           drawer.center_view();
@@ -814,6 +816,8 @@ const background_color = '#000000';
 
         stop(function () {
           life.clear_pattern();
+          drawer.resetNodeIds();
+
 
           // Note: Not exact density because some points may be repeated
           const field_x = new Int32Array(Math.round(width * height * density));
@@ -1123,6 +1127,7 @@ const background_color = '#000000';
       }
 
       life.clear_pattern();
+      drawer.resetNodeIds();
 
       if (!is_mc) {
         var bounds = LifeUniverse.get_bounds(result.field_x, result.field_y);
