@@ -6,8 +6,6 @@ const MASK_TOP = 2;
 const MASK_RIGHT = 4;
 const MASK_BOTTOM = 8;
 
-let objectIdCounter = 0;
-
 type ReadWrite<T> = {
   -readonly [P in keyof T]: T[P];
 };
@@ -25,7 +23,6 @@ export interface IPoint {
 }
 
 interface ILeaf {
-  readonly objectId: number;
   readonly id: number;
   readonly level: number;
   readonly population: number;
@@ -42,7 +39,6 @@ export interface ITreeNode extends ILeaf {
 };
 
 class TreeNode implements ITreeNode {
-  public readonly objectId = objectIdCounter++;
   public readonly level: number;
   public readonly population: number;
   public cache: ITreeNode | null;
@@ -78,13 +74,11 @@ class TreeNode implements ITreeNode {
 }
 
 class TrueLeaf implements ILeaf {
-  public readonly objectId = objectIdCounter++;
   public readonly id = 2;
   public readonly population = 1;
   public readonly level = 0;
 }
 class FalseLeaf implements ILeaf {
-  public readonly objectId = objectIdCounter++;
   public readonly id = 3;
   public readonly population = 0;
   public readonly level = 0;
@@ -418,7 +412,6 @@ export class LifeUniverse {
   };
 
   public clear_pattern(): void {
-    objectIdCounter = 2;
     this.last_id = 4;
     this.hashmap_size = (1 << INITIAL_SIZE) - 1;
     this.max_load = this.hashmap_size * LOAD_FACTOR | 0;
