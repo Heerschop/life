@@ -84,15 +84,6 @@ class CellProperties {
     }
   }
 
-  private findNode(cell: IGridCell | undefined, id: number): (IPoint & { node: INodeInfo }) | null {
-    if (cell) {
-      for (const item of this.getNodes(cell)) {
-        if (item.node.node.id === id) return item;
-      }
-    }
-
-    return null;
-  }
   public findTarget(left: number, top: number, size: number, id: number): IPoint | null {
     const pointer = left + top * size;
     const target = this.cells.get(pointer);
@@ -339,7 +330,7 @@ export class LifeCanvasDrawer {
         if (mouseX > item.x && mouseX < item.x + nodeWidth && mouseY > item.y && mouseY < item.y + nodeHeight) {
           let target: IPoint | null;
 
-          if (target = properties.findTarget(cell.left, cell.top, size, item.node.node.nw.id)) {
+          if (item.node.node.nw && (target = properties.findTarget(cell.left, cell.top, size, item.node.node.nw.id))) {
             result.push({
               source: {
                 x: item.x,
@@ -349,7 +340,7 @@ export class LifeCanvasDrawer {
             });
           }
 
-          if (target = properties.findTarget(cell.left + item.node.size, cell.top, size, item.node.node.ne.id)) {
+          if (item.node.node.ne && (target = properties.findTarget(cell.left + item.node.size, cell.top, size, item.node.node.ne.id))) {
             result.push({
               source: {
                 x: item.x + nodeWidth,
@@ -360,7 +351,7 @@ export class LifeCanvasDrawer {
           }
 
 
-          if (target = properties.findTarget(cell.left + item.node.size, cell.top + item.node.size, size, item.node.node.se.id)) {
+          if (item.node.node.se && (target = properties.findTarget(cell.left + item.node.size, cell.top + item.node.size, size, item.node.node.se.id))) {
             result.push({
               source: {
                 x: item.x + nodeWidth,
@@ -370,7 +361,7 @@ export class LifeCanvasDrawer {
             });
           }
 
-          if (target = properties.findTarget(cell.left, cell.top + item.node.size, size, item.node.node.sw.id)) {
+          if (item.node.node.sw && (target = properties.findTarget(cell.left, cell.top + item.node.size, size, item.node.node.sw.id))) {
             result.push({
               source: {
                 x: item.x,
@@ -535,7 +526,7 @@ export class LifeCanvasDrawer {
       const rowSpace = height / 7.7;
       const maring = width / 10;
 
-      y += rowSpace * 1.4;
+      y += rowSpace * 1.2;
 
       this.context.textAlign = 'left';
       this.context.font = 'bold ' + fontSize * 0.9 + 'px sans-serif';
@@ -543,13 +534,14 @@ export class LifeCanvasDrawer {
       this.context.textAlign = 'right';
       this.context.fillText(info.id.toString(), x + width - maring, y);
 
-      y += rowSpace * 0.8;
+      y += rowSpace * 0.55;
 
       this.context.textAlign = 'left';
       this.context.font = fontSize * 0.8 + 'px sans-serif';
       this.context.fillText('id: ' + node.id, x + maring, (y += rowSpace));
       this.context.fillText('level: ' + node.level, x + maring, (y += rowSpace));
       this.context.fillText('population: ' + node.population, x + maring, (y += rowSpace));
+      // this.context.fillText('generation: ' + node.generation, x + maring, (y += rowSpace));
       this.context.fillText('size: ' + info.size, x + maring, (y += rowSpace));
     }
     if (width > 18 && width < 75) {
