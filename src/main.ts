@@ -194,18 +194,19 @@ const background_color = '#000000';
       }
     }
     else {
-      load_random();
-      //life.clear_pattern();
-      //drawer.resetNodeIds();
+      if (window.location.search === '?debug=true') {
 
-      //drawer.cell_width = 400;
-      //drawer.zoom_at(false, -2000, -1800);
+        drawer.cell_width = 512;
+        drawer.zoom_at(false, 0, 0);
+        drawer.center_view();
+        drawer.move(3800, 3500);
 
-      //toggleDebugMode();
+        toggleDebugMode();
 
-      //gridCells = drawer.get_cells(life.root);
-
-      //drawer.draw_cells(gridCells);
+        gridCells = drawer.get_cells(life.root);
+        drawer.draw_cells(gridCells);
+      } else
+        load_random();
     }
 
     if (parameters["noui"] === "1") {
@@ -572,7 +573,6 @@ const background_color = '#000000';
         drawer.zoom_at((e.wheelDelta || -e.detail) < 0, e.clientX, e.clientY);
 
         if (debugMode) {
-          console.log(drawer.cell_width);
           if (drawer.cell_width > 50)
             window.addEventListener("mousemove", detect_mouse_hit, true);
           else
